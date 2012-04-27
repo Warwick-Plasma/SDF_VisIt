@@ -1,0 +1,10 @@
+Makefile
+.depend
+*.d
+*.o
+*.so
+make-variables*
+CMake*
+cmake*
+*PluginInfo.[Ch]
+.*.swp
