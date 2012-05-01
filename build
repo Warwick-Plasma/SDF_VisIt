@@ -1,9 +1,19 @@
 #! /bin/sh
 
-formats="$1"
-[ "$formats"x = x ] && formats="SDF"
+formats="SDF"
+publicORprivate="-private"
+public=0
+
+while getopts pf: name ; do
+   case $name in
+      f) formats="$OPTARG" ;;
+      p) public=1
+         publicORprivate="-public" ;;
+   esac
+done
 
 version=`visit -version 2>&1 | sed 's,.* \([0-9]*\).*,\1,'`
+fullversion=$(visit -version 2>&1 | sed 's/.* \([0-9]*\.[0-9]*\.[0-9]*\)\./\1/')
 tmpdir=.tmp
 
 . build.cfg
@@ -40,11 +50,11 @@ buildit () {
   mkdir -p $tmpdir
   if [ "$version"x != x ]; then
     for fmt in $formats; do
-      xml2info -clobber ${fmt}${version}.xml
+      xml2info -clobber $publicORprivate ${fmt}${version}.xml
       rm -f CMake* cmake* Makefile
   
       if [ $version -eq 1 ]; then
-        xml2makefile -clobber ${fmt}${version}.xml
+        xml2makefile -clobber $publicORprivate ${fmt}${version}.xml
         if [ "`uname -s`"x = "Darwinx" -a "`uname -m`"x = "x86_64x" ]; then
           sed "s,\(^CXXFLAGS.*\),\1 -m32 $DBG \
 CFLAGS=$(CFLAGSORIG) -m32 $DBG \
@@ -52,7 +62,7 @@ PY_CXXFLAGS=-I$(TOPDIR)/include/python,;s,\(^LDFLAGS.*\),\1 -m32 $DBG," Makefile
           \mv -f .Makefile.tmp Makefile
         fi
       else
-        xml2cmake -clobber ${fmt}${version}.xml
+        xml2cmake -clobber $publicORprivate ${fmt}${version}.xml
         for f in `grep -w INCLUDE CMakeLists.txt | cut -f2 -d\"`; do
           base=`basename $f`
           sed 's,/usr/lib/libmpi[^;]*.dylib,,g;s,/usr/lib/libopen[^;]*.dylib,,g' $f > $tmpdir/$base
@@ -94,6 +104,8 @@ fi
 for fmt in $formats; do
   if [ "$fmt"x = "SDF"x ]; then
     ./build_lib
+    mkdir -p $visitpath/../$fullversion/fge_extensions
+    [ $public = 1 ] && cp sdf_extension.so $visitpath/../$fullversion/fge_extensions
     gcc -DSDF_DEBUG_ALL $DBG -o sdf2ascii sdf2ascii.c sdf_control.c sdf_util.c \
         sdf_input.c sdf_input_cartesian.c sdf_input_point.c
     #python setup.py build -b pybuild install
