@@ -74,7 +74,7 @@
 #include <dlfcn.h>
 
 using     std::string;
-int avtSDFFileFormat::failed = 0;
+int avtSDFFileFormat::extension_not_found = 0;
 
 
 // ****************************************************************************
@@ -138,19 +138,25 @@ static inline void stack_init(void)
 
 sdf_extension_t *avtSDFFileFormat::sdf_extension_load(sdf_file_t *h)
 {
-    if (avtSDFFileFormat::failed) return NULL;
+    if (avtSDFFileFormat::extension_not_found) return NULL;
 
     sdf_extension_handle = dlopen("sdf_extension.so", RTLD_LAZY);
+
     if (!sdf_extension_handle) {
-        avtSDFFileFormat::failed = 1;
+        avtSDFFileFormat::extension_not_found = 1;
         cerr << dlerror() << endl;
         return NULL;
     }
+
     sdf_extension_create_t *sdf_extension_create =
         (sdf_extension_create_t *)dlsym(sdf_extension_handle,
         "sdf_extension_create");
 
-    return sdf_extension_create(h);
+    sdf_extension_t *ext = sdf_extension_create(h);
+
+    if (!ext) avtSDFFileFormat::extension_not_found = 1;
+
+    return ext;
 }
 
 
@@ -180,10 +186,6 @@ void avtSDFFileFormat::sdf_extension_unload(void)
 void
 avtSDFFileFormat::OpenFile(int open_only)
 {
-    char **preload, *str;
-    sdf_block_t *var, *cur;
-    int n;
-
     if (!h) h = sdf_open(filename, rank, comm, 0);
     if (!h) EXCEPTION1(InvalidFilesException, filename);
     h->use_float = use_float;
@@ -191,7 +193,14 @@ avtSDFFileFormat::OpenFile(int open_only)
     time = h->time;
     debug1 << "avtSDFFileFormat:: " << __LINE__ << " h:" << h << endl;
 
-    if (open_only) return;
+    if (open_only) {
+        // Retrieve the extended interface library from the plugin manager
+        ext = sdf_extension_load(h);
+
+        sdf_close(h);
+        h = NULL;
+        return;
+    }
 
     if (h->blocklist) {
         if (ext) ext->timestate_update(ext, h);
@@ -199,27 +208,35 @@ avtSDFFileFormat::OpenFile(int open_only)
     }
 
     sdf_read_blocklist(h);
+    // Append derived data to the blocklist using built-in library.
     sdf_add_derived_blocks(h);
-    if (!ext) return;
 
-    preload = ext->preload(ext, h);
-    if (preload) {
-        cur = h->current_block;
-        n = 0;
-        while(preload[n]) {
-            var = sdf_find_block_by_id(h, preload[n]);
-            if (var && !var->data) {
-                h->current_block = var;
-                sdf_read_data(h);
+    if (ext) {
+        char **preload;
+
+        preload = ext->preload(ext, h);
+        // For each entry in the preload array, try to find the block
+        // and populate its data.
+        if (preload) {
+            sdf_block_t *var, *cur;
+            int n = 0;
+            cur = h->current_block;
+            while(preload[n]) {
+                var = sdf_find_block_by_id(h, preload[n]);
+                if (var && !var->data) {
+                    h->current_block = var;
+                    sdf_read_data(h);
+                }
+                free(preload[n]);
+                n++;
             }
-            free(preload[n]);
-            n++;
+            free(preload);
+            h->current_block = cur;
         }
-        free(preload);
-        h->current_block = cur;
-    }
 
-    ext->read_blocklist(ext, h);
+        // Append derived data to the blocklist using the extension library.
+        ext->read_blocklist(ext, h);
+    }
 }
 
 
@@ -267,11 +284,6 @@ avtSDFFileFormat::avtSDFFileFormat(const char *filename,
 
     debug1 << "avtSDFFileFormat::OpenFile() " << __LINE__ << endl;
     OpenFile(1);
-
-    // Retrieve the extended interface library from the plugin manager
-    ext = sdf_extension_load(h);
-    sdf_close(h);
-    h = NULL;
 }
 
 
@@ -418,7 +430,8 @@ avtSDFFileFormat::PopulateDatabaseMetaData(avtDatabaseMetaData *md)
                 smd->units = b->units;
                 md->Add(smd);
             }
-        } else if (b->blocktype == SDF_BLOCKTYPE_STITCHED_TENSOR) {
+        } else if (b->blocktype == SDF_BLOCKTYPE_STITCHED_TENSOR
+                || b->blocktype == SDF_BLOCKTYPE_MULTI_TENSOR) {
             std::string definition;
             definition.append("{");
             sdf_block_t *matvar;
@@ -789,7 +802,7 @@ avtSDFFileFormat::GetArray(int domain, const char *varname)
 
     } else if (b->blocktype == SDF_BLOCKTYPE_PLAIN_DERIVED ||
                b->blocktype == SDF_BLOCKTYPE_POINT_DERIVED) {
-        sdf_block_t *var, *mesh = NULL;
+        sdf_block_t *var;
         for (int i = 0; i < b->n_ids; i++) {
             // Fill in derived components which are not already cached
             if (b->must_read[i]) {
@@ -800,21 +813,27 @@ avtSDFFileFormat::GetArray(int domain, const char *varname)
 
         // Allocate derived variable data if required
         if (!b->data) {
-            mesh = sdf_find_block_by_id(h, b->mesh_id);
+            sdf_block_t *mesh = sdf_find_block_by_id(h, b->mesh_id);
             b->ndims = mesh->ndims;
             memcpy(b->local_dims, mesh->local_dims, b->ndims*sizeof(int));
-            b->nlocal = 1;
-            for (int i=0; i < b->ndims; i++) {
-                if (b->stagger == SDF_STAGGER_CELL_CENTRE) b->local_dims[i]--;
-                b->nlocal *= b->local_dims[i];
-            }
-            if (b->blocktype == SDF_BLOCKTYPE_POINT_DERIVED)
+
+            if (b->blocktype == SDF_BLOCKTYPE_POINT_DERIVED) {
                 b->nlocal = mesh->npoints;
+            } else {
+                b->nlocal = 1;
+                for (int i=0; i < b->ndims; i++) {
+                    if (b->stagger == SDF_STAGGER_CELL_CENTRE)
+                        b->local_dims[i]--;
+                    b->nlocal *= b->local_dims[i];
+                }
+            }
+
             if (!b->datatype_out) {
                 b->type_size_out = mesh->type_size_out;
                 b->datatype_out = mesh->datatype_out;
             } else
                 b->type_size_out = SDF_TYPE_SIZES[b->datatype_out];
+
             stack_alloc(b);
         }
 

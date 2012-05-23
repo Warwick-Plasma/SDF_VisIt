@@ -194,8 +194,7 @@ class avtSDFFileFormat : public avtSTMDFileFormat
     sdf_file_t *h;
     char *filename;
     bool gotMetadata;
-    void *sdf_extension_handle;
-    sdf_extension_t *ext;
+
     virtual void           PopulateDatabaseMetaData(avtDatabaseMetaData *);
     char *GetCompositeName(sdf_block_t *b);
     void *GetMaterial(const char *var, int domain);
@@ -205,10 +204,13 @@ class avtSDFFileFormat : public avtSTMDFileFormat
     vtkDataSet *GetCurve(int domain, sdf_block_t *b);
     sdf_block_t *GetArray(int, const char *);
     void OpenFile(int);
+
+    void *sdf_extension_handle;
+    sdf_extension_t *ext;
     sdf_extension_t *sdf_extension_load(sdf_file_t *);
     void sdf_extension_unload(void);
   public:
-    static int failed;
+    static int extension_not_found;
 };
 
 
