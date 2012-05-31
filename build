@@ -68,6 +68,8 @@ PY_CXXFLAGS=-I$(TOPDIR)/include/python,;s,\(^LDFLAGS.*\),\1 -m32 $DBG," Makefile
         mv $tmpdir/tmp CMakeLists.txt
       done
       cmake $DEBUG .
+      # FIXME: This is to workaround incorrect cmake output
+      sed -i '/visit.*librt\.so/ d;/visit.*libpthread\.so/ d' ./CMakeFiles/ESDFDatabase_par.dir/build.make
     fi
 
     make clean
