@@ -20,7 +20,7 @@ do
       c) clean=1 ; OPTS="$OPTS -c";;
       d) DBG="-g -O0"; OPTS="$OPTS -d";
          DEBUG="-DCMAKE_BUILD_TYPE=Debug" ;;
-      p) PRIVATE="-public" ;;
+      p) PRIVATE="-public"; OPTS="$OPTS -p" ;;
       n) build_visit_reader=0 ;;
       u) build_utilities=1 ;;
       v) VERBOSE="VERBOSE=1" ;;
