@@ -11,3 +11,4 @@ pybuild
 sdf2ascii
 *.so
 .*.swp
+*.a
