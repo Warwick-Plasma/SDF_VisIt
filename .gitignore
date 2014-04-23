@@ -8,7 +8,6 @@ cmake*
 Makefile
 *.dSYM
 .*.swp
-pybuild
 commit_info.h
 build_date.h
 .builddir

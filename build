@@ -73,7 +73,7 @@ cd "$cwd"
 
 
 export PATH=$visitpath:$PATH
-export CXXFLAGS="-Wno-deprecated $DBG"
+export CXXFLAGS="-Wno-deprecated -stdlib=libstdc++ $DBG"
 export CFLAGS="$DBG"
 
 buildit () {
@@ -231,9 +231,4 @@ elif [ $build_visit_reader -eq 1 ]; then
 
   echo
   echo "VisIt ${fmt} reader successfully built.${srl}"
-fi
-
-[ -x ./extension/build ] && ./extension/build $OPTS
-if [ $build_utilities -eq 1 ]; then
-  [ -x ./utilities/build ] && ./utilities/build $OPTS
 fi
