@@ -20,8 +20,8 @@ err=0
 while getopts crdpnuvh123 name
 do
    case $name in
-      c) clean=2 ; OPTS+=" -c";;
-      r) clean=1 ; OPTS+=" -r";;
+      c) clean=2 ; OPTS="$OPTS -c";;
+      r) clean=1 ; OPTS="$OPTS -r";;
       d) DBG="-g -O0"; OPTS="$OPTS -d";
          DEBUG="-DCMAKE_BUILD_TYPE=Debug" ;;
       p) PRIVATE="-public"; OPTS="$OPTS -p" ;;
