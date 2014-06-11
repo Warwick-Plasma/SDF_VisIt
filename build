@@ -73,7 +73,7 @@ cd "$cwd"
 
 
 export PATH=$visitpath:$PATH
-export CXXFLAGS="-Wno-deprecated -stdlib=libstdc++ $DBG"
+export CXXFLAGS="-Wno-deprecated $DBG"
 export CFLAGS="$DBG"
 
 buildit () {
