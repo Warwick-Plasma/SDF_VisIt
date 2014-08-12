@@ -75,6 +75,10 @@ cd "$cwd"
 export PATH=$visitpath:$PATH
 export CXXFLAGS="-Wno-deprecated $DBG"
 export CFLAGS="$DBG"
+system=$(uname -s)
+if [ "$system"x = "Darwinx" ]; then
+  export CXXFLAGS="-stdlib=libstdc++ $CXXFLAGS"
+fi
 
 buildit () {
   err=0
