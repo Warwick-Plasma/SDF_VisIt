@@ -75,8 +75,14 @@ cd "$cwd"
 export PATH=$visitpath:$PATH
 export CXXFLAGS="-Wno-deprecated $DBG"
 export CFLAGS="$DBG"
-system=$(uname -s)
-if [ "$system"x = "Darwinx" ]; then
+
+# Auto-detect C++ compiler
+cpp=$CXX
+[ "$cpp"x = x ] && cpp=$(which c++)
+[ "$cpp"x = x ] && cpp=$(which cpp)
+[ "$cpp"x = x ] && cpp=$(which g++)
+$cpp --version | grep -i clang > /dev/null 2>&1
+if [ $? -eq 0 ]; then
   export CXXFLAGS="-stdlib=libstdc++ $CXXFLAGS"
 fi
 
