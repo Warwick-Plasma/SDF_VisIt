@@ -31,7 +31,7 @@ diff -Nuar visit2.7.3.orig/src/avt/Plotter/avtLegend.C visit2.7.3/src/avt/Plotte
 @@ -689,7 +695,8 @@
      if (str != NULL)
      {
-         varName = new char[strlen(str)+1];
+         varName = new char[strlen(str)+6];
 -        strcpy(varName, str);
 +        strcpy(varName, "Var: ");
 +        strcat(varName, str);
