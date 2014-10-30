@@ -75,6 +75,7 @@
 #include <dlfcn.h>
 #include "commit_info.h"
 #include "build_date.h"
+#include "sdf_helper.h"
 #include "stack_allocator.h"
 
 using std::string;
@@ -191,9 +192,7 @@ avtSDFFileFormat::OpenFile(int open_only)
             while(preload[n]) {
                 var = sdf_find_block_by_id(h, preload[n]);
                 if (var && !var->data) {
-                    h->current_block = var;
-                    stack_alloc(h->current_block);
-                    sdf_read_data(h);
+                    sdf_helper_read_data(h, var);
                 }
                 free(preload[n]);
                 n++;
@@ -637,7 +636,7 @@ avtSDFFileFormat::GetMesh(int domain, const char *meshname)
     if (b->populate_data)
         b->populate_data(h, b);
     else
-        sdf_read_data(h);
+        sdf_helper_read_data(h, b);
 
     if (b->blocktype == SDF_BLOCKTYPE_POINT_MESH) {
         vtkPoints *points  = vtkPoints::New();
@@ -883,13 +882,8 @@ avtSDFFileFormat::GetCurve(int domain, sdf_block_t *b)
 
     int nelements_local;
 
-    h->current_block = mesh;
-    stack_alloc(h->current_block);
-    sdf_read_data(h);
-
-    h->current_block = b;
-    stack_alloc(h->current_block);
-    sdf_read_data(h);
+    sdf_helper_read_data(h, mesh);
+    sdf_helper_read_data(h, b);
 
     if (b->blocktype == SDF_BLOCKTYPE_POINT_VARIABLE) {
         nelements_local = b->nelements_local;
@@ -994,9 +988,7 @@ avtSDFFileFormat::GetArray(int domain, const char *varname)
                     var->data = (char*)b->data + i * var->nelements_local
                             * SDF_TYPE_SIZES[var->datatype_out];
                     var->dont_own_data = 1;
-                    h->current_block = var;
-                    stack_alloc(h->current_block);
-                    sdf_read_data(h);
+                    sdf_helper_read_data(h, var);
                 }
             }
         }
@@ -1008,54 +1000,8 @@ avtSDFFileFormat::GetArray(int domain, const char *varname)
     }
 
     if (b->data) return b;
-    h->current_block = b;
 
-    if (b->blocktype == SDF_BLOCKTYPE_PLAIN_VARIABLE ||
-            b->blocktype == SDF_BLOCKTYPE_POINT_VARIABLE) {
-        stack_alloc(h->current_block);
-        sdf_read_data(h);
-
-    } else if (b->blocktype == SDF_BLOCKTYPE_PLAIN_DERIVED ||
-               b->blocktype == SDF_BLOCKTYPE_POINT_DERIVED) {
-        sdf_block_t *var;
-        for (int i = 0; i < b->n_ids; i++) {
-            // Fill in derived components which are not already cached
-            if (b->must_read[i]) {
-                var = sdf_find_block_by_id(h, b->variable_ids[i]);
-                if (var && !var->data) GetArray(domain, var->name);
-            }
-        }
-
-        // Allocate derived variable data if required
-        if (!b->data && !b->dont_allocate) {
-            sdf_block_t *mesh = sdf_find_block_by_id(h, b->mesh_id);
-            b->ndims = mesh->ndims;
-            memcpy(b->local_dims, mesh->local_dims,
-                   b->ndims * sizeof(*b->local_dims));
-
-            if (b->blocktype == SDF_BLOCKTYPE_POINT_DERIVED) {
-                b->nelements_local = mesh->dims[0];
-            } else {
-                b->nelements_local = 1;
-                for (unsigned int i=0; i < b->ndims; i++) {
-                    if (b->stagger == SDF_STAGGER_CELL_CENTRE)
-                        b->local_dims[i]--;
-                    b->nelements_local *= b->local_dims[i];
-                }
-            }
-
-            if (!b->datatype_out)
-                b->datatype_out = mesh->datatype_out;
-
-            stack_alloc(b);
-        }
-
-        // Execute callback to fill in the derived variable
-        if (b->populate_data) b->populate_data(h, b);
-    } else {
-        stack_alloc(h->current_block);
-        sdf_read_data(h);
-    }
+    sdf_helper_read_data(h, b);
 
 #ifdef SDF_DEBUG
     debug1 << "avtSDFFileFormat:: SDF debug buffer: ";
@@ -1273,9 +1219,7 @@ avtSDFFileFormat::GetMaterialType(sdf_block_t *sblock, int domain)
         var_id = sblock->variable_ids[i];
         vfm_blocks[i] = sdf_find_block_by_id(h, var_id);
         if (!vfm_blocks[i]) EXCEPTION1(InvalidVariableException, var_id);
-        h->current_block = vfm_blocks[i];
-        stack_alloc(h->current_block);
-        sdf_read_data(h);
+        sdf_helper_read_data(h, vfm_blocks[i]);
     }
 #ifdef SDF_DEBUG
     debug1 << "avtSDFFileFormat:: SDF debug buffer: ";
@@ -1296,9 +1240,7 @@ avtSDFFileFormat::GetMaterialType(sdf_block_t *sblock, int domain)
     if (sblock->subblock) {
         sdf_block_t *obgrp = sblock->subblock;
         sdf_block_t *ob = obgrp->subblock;
-        h->current_block = ob;
-        stack_alloc(h->current_block);
-        sdf_read_data(h);
+        sdf_helper_read_data(h, ob);
         obdata = (int *)ob->data;
         ng = ob->ng;
         nx = ob->local_dims[0] - 2 * ng;
@@ -1544,9 +1486,7 @@ avtSDFFileFormat::GetSpeciesType(sdf_block_t *sblock, int domain)
         var_id = sblock->variable_ids[i];
         vfm_block = sdf_find_block_by_id(h, var_id);
         if (!vfm_block) EXCEPTION1(InvalidVariableException, var_id);
-        h->current_block = vfm_block;
-        stack_alloc(h->current_block);
-        sdf_read_data(h);
+        sdf_helper_read_data(h, vfm_block);
         vfm_ptrs[i] = (Real*)vfm_block->data;
     }
 
