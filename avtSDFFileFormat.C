@@ -64,6 +64,7 @@
 #include <avtStructuredDomainBoundaries.h>
 #include <avtMaterial.h>
 #include <avtSpecies.h>
+#include <avtDatabase.h>
 #include <DebugStream.h>
 
 #include <DBOptionsAttributes.h>
@@ -256,10 +257,10 @@ avtSDFFileFormat::avtSDFFileFormat(const char *filename,
     stack_init();
     ext = NULL;
 
-#ifdef MDSERVER
-    debug1 << "avtSDFFileFormat::OpenFile(1) call " << __LINE__ << endl;
-    OpenFile(1);
-#endif
+    if (avtDatabase::OnlyServeUpMetaData()) {
+        debug1 << "avtSDFFileFormat::OpenFile(1) call " << __LINE__ << endl;
+        OpenFile(1);
+    }
 }
 
 
