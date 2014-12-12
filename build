@@ -59,6 +59,11 @@ done
 # Find directory containing the actual visit binary
 cwd=`pwd`
 cmd=`which visit`
+if [ "$cmd"x = x ]; then
+  echo ERROR: The command 'visit' was not found in your search PATH
+  exit 1
+fi
+
 i=0
 while [ $i -lt 100 ]; do
   visitpath=`dirname $cmd`
