@@ -202,7 +202,7 @@ if [ $clean -ge 2 ]; then
   make clean > /dev/null 2>&1
   rm -rf CMake* cmake* Makefile ${fmt}*Info.C ${fmt}*Info.h $tmpdir
 elif [ $build_visit_reader -eq 1 ]; then
-  ./gen_commit_string
+  sh gen_commit_string.sh
   echo "#define SDF_READER_BUILD_DATE \"`date`\"" > build_date.h
 
   if [ $build_type -eq 1 ]; then

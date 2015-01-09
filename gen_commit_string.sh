@@ -29,38 +29,15 @@ if [ $? -eq 0 ]; then
     gitdescribe=unknown-unknown-g$always
   fi
 
-  svnrev=$(git svn log -1 --oneline 2>/dev/null)
-  if [ $? -eq 0 ]; then
-    svnrev=$(echo $svnrev | cut -f1 -d' ' | cut -c2-)
-  else
-    svnrev=unknown
-  fi
-
   git update-index -q --refresh
   test -z "$(git diff-index --name-only HEAD --)" || state='dirty'
 
-  commit_string=$gitdescribe-$svnrev-$state
+  commit_string=$gitdescribe-$state
   commit_date=$(git log --pretty=format:%cd -1 HEAD)
 else
 # not in a git repo
-  gitdescribe=unknown-unknown-unknown
-
-  svnrev=$(svn info 2>/dev/null | grep '^Last Changed Rev:')
-
-  if [ $? -eq 0 ]; then
-    svnrev=$(echo $svnrev | sed 's/Last Changed Rev: *//')
-
-    n=$(svn status 2>/dev/null | grep -v '?' | wc -l)
-    [ $n -ne 0 ] && state='dirty'
-
-    commit_string=$gitdescribe-$svnrev-$state
-
-    svndate=$(svn info --xml ../.. | grep '<date>')
-    commit_date=$(perl -e 'use Time::Local; use POSIX qw(strftime);
-      $_="'$svndate'"; /(\d*)-(\d*)-(\d*)T(\d*):(\d*):(\d*)/; $m=$2-1;
-      $t=timegm($6,$5,$4,$3,$m,$1);
-      $d = strftime "%a %b %e %T %Y %z\n", localtime($t); print "$d";')
-  fi
+  commit_string=unknown-unknown-unknown-unknown
+  commit_date=unknown
 fi
 
 [ -z $commit_string ] && exit
