@@ -36,6 +36,8 @@ if [ $? -eq 0 ]; then
   commit_date=$(git log --pretty=format:%cd -1 HEAD)
 else
 # not in a git repo
+  grep "SDF_READER_COMMIT_ID" $COMMIT_FILE > /dev/null 2>&1
+  [ $? -eq 0 ] && exit
   commit_string=unknown-unknown-unknown-unknown
   commit_date=unknown
 fi
