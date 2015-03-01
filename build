@@ -77,7 +77,7 @@ done
 cd "$cwd"
 
 
-export PATH=$visitpath:$PATH
+export PATH="$visitpath:$PATH"
 export CXXFLAGS="-Wno-deprecated $DBG"
 export CFLAGS="$DBG"
 
