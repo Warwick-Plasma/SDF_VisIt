@@ -142,6 +142,7 @@ avtSDFFileFormat::OpenFile(int open_only)
 {
     if (!h) h = sdf_open(filename, comm, SDF_READ, 0);
     if (!h) EXCEPTION1(InvalidFilesException, filename);
+    h->stack_handle = stack_handle;
     step = h->step;
     time = h->time;
     debug1 << "avtSDFFileFormat::OpenFile h:" << h << endl;
@@ -254,7 +255,7 @@ avtSDFFileFormat::avtSDFFileFormat(const char *filename,
                    << "\"" << endl;
     }
 
-    stack_init();
+    stack_handle = stack_init();
     ext = NULL;
 
     if (avtDatabase::OnlyServeUpMetaData()) {
@@ -282,7 +283,7 @@ void
 avtSDFFileFormat::FreeUpResources(void)
 {
     debug1 << "avtSDFFileFormat::FreeUpResources(void) " << this << endl;
-    stack_free();
+    sdf_stack_free(h);
     sdf_free_blocklist_data(h);
 }
 
@@ -620,7 +621,7 @@ avtSDFFileFormat::GetMesh(int domain, const char *meshname)
     debug1 << "avtSDFFileFormat::GetMesh(domain:" << domain << ", meshname:"
            << meshname << ") " << this << endl;
 
-    stack_freeup_memory();
+    sdf_stack_freeup_memory(h);
 
     sdf_block_t *b = sdf_find_block_by_name(h, meshname);
     if (!b) EXCEPTION1(InvalidVariableException, meshname);
@@ -877,7 +878,7 @@ avtSDFFileFormat::GetCurve(int domain, sdf_block_t *b)
     debug1 << "avtSDFFileFormat::GetCurve(domain:" << domain << ", sdf_block:"
            << b << ")" << endl;
 
-    stack_freeup_memory();
+    sdf_stack_freeup_memory(h);
 
     sdf_block_t *mesh = sdf_find_block_by_id(h, b->mesh_id);
 
@@ -974,11 +975,11 @@ avtSDFFileFormat::GetArray(int domain, const char *varname)
                     // of the stitched blocks
                     b->datatype     = var->datatype;
                     b->datatype_out = var->datatype_out;
-                    if (var->data) stack_free_block(var);
+                    if (var->data) sdf_stack_free_block(h, var);
                 }
             }
             b->done_data = 0;
-            stack_alloc(b);
+            sdf_stack_alloc(h, b);
         }
 
         for (int i = 0; i < b->n_ids; i++) {
@@ -1037,7 +1038,7 @@ avtSDFFileFormat::GetVar(int domain, const char *varname)
     debug1 << "avtSDFFileFormat::GetVar(domain:" << domain << ", varname:"
            << varname << ") " << this << endl;
 
-    stack_freeup_memory();
+    sdf_stack_freeup_memory(h);
 
     sdf_block_t *b = GetArray(domain, varname);
     if (!b) EXCEPTION1(InvalidVariableException, varname);
@@ -1391,7 +1392,7 @@ avtSDFFileFormat::GetMaterial(const char *var, int domain)
     debug1 << "avtSDFFileFormat::GetMaterial(var:" << var << ", domain:"
            << domain << ")" << endl;
 
-    stack_freeup_memory();
+    sdf_stack_freeup_memory(h);
 
     sdf_block_t *sblock = sdf_find_block_by_name(h, var);
     if (!sblock) EXCEPTION1(InvalidVariableException, var);
@@ -1586,7 +1587,7 @@ avtSDFFileFormat::GetSpecies(const char *var, int domain)
     debug1 << "avtSDFFileFormat::GetSpecies(var:" << var << ", domain:"
            << domain << ")" << endl;
 
-    stack_freeup_memory();
+    sdf_stack_freeup_memory(h);
 
     sdf_block_t *sblock = sdf_find_block_by_name(h, var);
     if (!sblock) EXCEPTION1(InvalidVariableException, var);

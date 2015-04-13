@@ -194,6 +194,7 @@ class avtSDFFileFormat : public avtSTMDFileFormat
     double time;
     comm_t comm;
     sdf_file_t *h;
+    stack_handle_t *stack_handle;
     char *filename;
     bool gotMetadata;
 
