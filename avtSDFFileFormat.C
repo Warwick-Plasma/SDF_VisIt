@@ -1249,12 +1249,10 @@ avtSDFFileFormat::GetMaterialType(sdf_block_t *sblock, int domain)
         ny = ob->local_dims[1] - 2 * ng;
         nmat += obgrp->ndims;
         mat_names = new char*[nmat];
-        for (int n = 0; n < nmat; n++ )
-            mat_names[n] = (char *)calloc(h->string_length+1, sizeof(char));
         for (int n = 0; n < nm; n++)
-            strcpy(mat_names[n], sblock->material_names[n]);
+            mat_names[n] = sblock->material_names[n];
         for (int n = 0; n < obgrp->ndims; n++)
-            strcpy(mat_names[nm+n], obgrp->material_names[n]);
+            mat_names[nm+n] = obgrp->material_names[n];
     }
 
     int *mat_numbers = new int[nmat];
@@ -1355,11 +1353,8 @@ avtSDFFileFormat::GetMaterialType(sdf_block_t *sblock, int domain)
     delete [] mat_numbers;
     delete [] material_list;
     delete [] vfm_blocks;
-    if (obdata) {
-       for (int n=0; n < nmat; n++)
-          delete [] mat_names[n];
+    if (obdata)
        delete [] mat_names;
-    }
 
     debug1 << "avtSDFFileFormat::GetMaterial() done" << endl;
 
