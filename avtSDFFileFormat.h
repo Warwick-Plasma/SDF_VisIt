@@ -49,6 +49,7 @@
 #include "sdf.h"
 #include "sdf_derived.h"
 #include "sdf_extension.h"
+#include "stack_allocator.h"
 
 class DBOptionsAttributes;
 using std::vector;

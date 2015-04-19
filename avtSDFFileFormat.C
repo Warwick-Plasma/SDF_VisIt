@@ -77,7 +77,6 @@
 #include "commit_info.h"
 #include "build_date.h"
 #include "sdf_helper.h"
-#include "stack_allocator.h"
 
 using std::string;
 using namespace SDFDBOptions;
