@@ -282,7 +282,7 @@ void
 avtSDFFileFormat::FreeUpResources(void)
 {
     debug1 << "avtSDFFileFormat::FreeUpResources(void) " << this << endl;
-    sdf_stack_free(h);
+    stack_free(stack_handle);
     sdf_free_blocklist_data(h);
 }
 
