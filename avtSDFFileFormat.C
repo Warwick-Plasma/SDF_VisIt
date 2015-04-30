@@ -162,7 +162,7 @@ avtSDFFileFormat::OpenFile(int open_only)
     h->sdf_extension_version  = SDF_EXTENSION_VERSION;
     h->sdf_extension_revision = SDF_EXTENSION_REVISION;
 #ifdef PARALLEL
-    h->par_visit = 1;
+    h->internal_ghost_cells = 1;
 #endif
 
     // If nblocks is negative then the file is corrupt
