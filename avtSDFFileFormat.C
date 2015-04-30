@@ -872,13 +872,16 @@ avtSDFFileFormat::FillGhost(int domain, vtkDataSet *ds)
 #ifdef PARALLEL
     // Set up ghost cells at parallel domain boundaries
 
+    sdf_block_t *b = h->current_block;
+    if (b->no_internal_ghost)
+        return;
+
     int starts[3], local_dims[3];
     sdf_get_domain_bounds(h, domain, starts, local_dims);
 
     int nCells = ds->GetNumberOfCells();
     int *blanks = new int[nCells];
     int i, j, k, ilo, jlo, klo, ihi, jhi, khi, n, nx, ny;
-    sdf_block_t *b = h->current_block;
 
     nx = ny = ilo = jlo = klo = 0;
     ihi = jhi = khi = 1;
