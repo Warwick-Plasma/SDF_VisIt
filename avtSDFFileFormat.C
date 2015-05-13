@@ -58,6 +58,11 @@
 #include <vtkCellArray.h>
 #include <vtkPolyData.h>
 
+#include <avtGhostData.h>
+#include <vtkUnsignedCharArray.h>
+#include <vtkCellData.h>
+#include <vtkStreamingDemandDrivenPipeline.h>
+
 #include <avtDatabaseMetaData.h>
 #include <avtIntervalTree.h>
 #include <avtVariableCache.h>
@@ -156,6 +161,9 @@ avtSDFFileFormat::OpenFile(int open_only)
     h->use_random = use_random;
     h->sdf_extension_version  = SDF_EXTENSION_VERSION;
     h->sdf_extension_revision = SDF_EXTENSION_REVISION;
+#ifdef PARALLEL
+    h->internal_ghost_cells = 1;
+#endif
 
     // If nblocks is negative then the file is corrupt
     if (h->nblocks <= 0) {
@@ -282,7 +290,7 @@ void
 avtSDFFileFormat::FreeUpResources(void)
 {
     debug1 << "avtSDFFileFormat::FreeUpResources(void) " << this << endl;
-    sdf_stack_free(h);
+    stack_free(stack_handle);
     sdf_free_blocklist_data(h);
 }
 
@@ -784,6 +792,8 @@ avtSDFFileFormat::GetMesh(int domain, const char *meshname)
 
         SetUpDomainConnectivity();
 
+        FillGhost(domain, rgrid);
+
 #ifdef SDF_DEBUG
         debug1 << "avtSDFFileFormat:: SDF debug buffer: ";
         debug1 << h->dbg_buf; h->dbg = h->dbg_buf; *h->dbg = '\0';
@@ -842,6 +852,8 @@ avtSDFFileFormat::GetMesh(int domain, const char *meshname)
 
         SetUpDomainConnectivity();
 
+        FillGhost(domain, sgrid);
+
 #ifdef SDF_DEBUG
         debug1 << "avtSDFFileFormat:: SDF debug buffer: ";
         debug1 << h->dbg_buf; h->dbg = h->dbg_buf; *h->dbg = '\0';
@@ -851,6 +863,85 @@ avtSDFFileFormat::GetMesh(int domain, const char *meshname)
 
     return NULL;
 }
+
+
+
+void
+avtSDFFileFormat::FillGhost(int domain, vtkDataSet *ds)
+{
+#ifdef PARALLEL
+    // Set up ghost cells at parallel domain boundaries
+
+    sdf_block_t *b = h->current_block;
+    if (b->no_internal_ghost)
+        return;
+
+    int starts[3], local_dims[3];
+    sdf_get_domain_bounds(h, domain, starts, local_dims);
+
+    int nCells = ds->GetNumberOfCells();
+    int *blanks = new int[nCells];
+    int i, j, k, ilo, jlo, klo, ihi, jhi, khi, n, nx, ny;
+
+    nx = ny = ilo = jlo = klo = 0;
+    ihi = jhi = khi = 1;
+
+    n = 0;
+    if (b->ndims > n) {
+        nx = ihi = b->local_dims[n] - 1;
+
+        if (b->proc_min[n] != MPI_PROC_NULL) ilo++;
+
+        if (b->proc_max[n] != MPI_PROC_NULL) ihi--;
+    }
+
+    n = 1;
+    if (b->ndims > n) {
+        ny = jhi = b->local_dims[n] - 1;
+
+        if (b->proc_min[n] != MPI_PROC_NULL) jlo++;
+
+        if (b->proc_max[n] != MPI_PROC_NULL) jhi--;
+    }
+
+    n = 2;
+    if (b->ndims > n) {
+        khi = b->local_dims[n] - 1;
+
+        if (b->proc_min[n] != MPI_PROC_NULL) klo++;
+
+        if (b->proc_max[n] != MPI_PROC_NULL) khi--;
+    }
+
+    for (i = 0; i < nCells; i++)
+        blanks[i] = 0;
+
+    for (k = klo; k < khi; k++)
+        for (j = jlo; j < jhi; j++)
+            for (i = ilo; i < ihi; i++)
+                blanks[i + nx * (j + ny * k)] = 1;
+
+    unsigned char realVal = 0, ghost = 0;
+    avtGhostData::AddGhostZoneType(ghost, DUPLICATED_ZONE_INTERNAL_TO_PROBLEM);
+    vtkUnsignedCharArray *ghostCells = vtkUnsignedCharArray::New();
+    ghostCells->SetName("avtGhostZones");
+    ghostCells->Allocate(nCells);
+    for (i = 0; i < nCells; i++) {
+        if (blanks[i])
+            ghostCells->InsertNextValue(realVal);
+        else
+            ghostCells->InsertNextValue(ghost);
+    }
+
+    ds->GetCellData()->AddArray(ghostCells);
+    vtkStreamingDemandDrivenPipeline::SetUpdateGhostLevel(
+        ds->GetInformation(), 0);
+    ghostCells->Delete();
+
+    delete [] blanks;
+#endif
+}
+
 
 
 // ****************************************************************************

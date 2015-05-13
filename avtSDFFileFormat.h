@@ -208,6 +208,7 @@ class avtSDFFileFormat : public avtSTMDFileFormat
     vtkDataSet *GetCurve(int domain, sdf_block_t *b);
     sdf_block_t *GetArray(int, const char *);
     void OpenFile(int);
+    void FillGhost(int domain, vtkDataSet *ds);
 
     void *sdf_extension_handle;
     sdf_extension_t *ext;

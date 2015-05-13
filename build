@@ -16,6 +16,7 @@ PRIVATE="-private"
 VERBOSE=""
 OPTS=""
 err=0
+stop=0
 
 while getopts crdpnuvh123 name
 do
@@ -50,9 +51,9 @@ VisIt build script options:
   -3: Perform only a serial VisIt build.
 EOF
          exit ;;
-      1) build_type=1 ;;
-      2) build_type=2 ;;
-      3) build_type=3 ;;
+      1) build_type=1 ; stop=1 ;;
+      2) build_type=2 ; stop=1 ;;
+      3) build_type=3 ; stop=1 ;;
    esac
 done
 
@@ -81,6 +82,8 @@ export PATH="$visitpath:$PATH"
 export CXXFLAGS="-Wno-deprecated $DBG"
 export CFLAGS="$DBG"
 
+stdlib="$CXXFLAGS"
+
 # Auto-detect C++ compiler
 cpp=$CXX
 [ "$cpp"x = x ] && cpp=$(which c++)
@@ -88,7 +91,7 @@ cpp=$CXX
 [ "$cpp"x = x ] && cpp=$(which g++)
 $cpp --version | grep -i clang > /dev/null 2>&1
 if [ $? -eq 0 ]; then
-  export CXXFLAGS="-stdlib=libstdc++ $CXXFLAGS"
+  stdlib="-stdlib=libstdc++ $CXXFLAGS"
 fi
 
 buildit () {
@@ -136,17 +139,32 @@ CC=mpicc," Makefile > .Makefile.tmp
       fi
     else
       xml2cmake -clobber $PRIVATE ${fmt}${version}.xml
+      setup=$(grep -w PluginVsInstall.cmake CMakeLists.txt | cut -f2 -d\")
+      grep -w clang $setup > /dev/null
+      if [ $? -ne 0 ]; then
+        # If using clang when original was compiled with gcc, then we need
+        # to add a flag for stdlib
+        export CXXFLAGS="$stdlib"
+      fi
       for f in `grep -w INCLUDE CMakeLists.txt | cut -f2 -d\( | \
           cut -f1 -d\) | tr -d \"`; do
         base=`basename $f`
-        sed 's,/[^;]*libmpi[^;]*;,,g; s,/[^;]*libopen-[^;]*;,,g;
-             s,[^;]*}general;,,g' $f > $tmpdir/$base
+        com1=vtkCommonDataModel
+        com2=vtkCommonExecutionModel
+        sed 's/\([;"]'$com1'-\)\([^;]*\)/\1\2;'$com2'-\2/' \
+            $f > $tmpdir/$base
         if [ $build_type -eq 2 ]; then
+          sed 's/\([;"]\)[^;]*libmpi[^;]*;/\1/g;
+               s/\([;"]\)[^;]*libopen-[^;]*;/\1/g;
+               s/\([;"]\)[^;]*general[^;]*;/\1/g' $f > $tmpdir/$base
           grep -v 'CMAKE_CXX_COMPILER ' $tmpdir/$base | \
               grep -v 'CMAKE_C_COMPILER ' | \
               grep -v 'VISIT_PARALLEL_LIBS ' > $tmpdir/tmp
           mv $tmpdir/tmp $tmpdir/$base
         elif [ $build_type -eq 3 ]; then
+          sed 's/\([;"]\)[^;]*libmpi[^;]*;/\1/g;
+               s/\([;"]\)[^;]*libopen-[^;]*;/\1/g;
+               s/\([;"]\)[^;]*general[^;]*;/\1/g' $f > $tmpdir/$base
           grep -v 'VISIT_PARALLEL ' $tmpdir/$base > $tmpdir/tmp
           mv $tmpdir/tmp $tmpdir/$base
         fi
@@ -167,6 +185,15 @@ CC=mpicc," Makefile > .Makefile.tmp
 
   if [ $clean -ge 1 ] ; then make clean ; fi
   make $VERBOSE
+  err=$?
+
+  if [ $err -eq 0 ]; then
+    echo
+    echo "VisIt ${fmt} reader successfully built.${srl}"
+  fi
+
+  if [ $stop -ne 0 ] ; then exit ; fi
+  return $err
 }
 
 build_default () {
@@ -244,7 +271,4 @@ elif [ $build_visit_reader -eq 1 ]; then
     echo "ERROR: Failed to build VisIt reader."
     exit 1
   fi
-
-  echo
-  echo "VisIt ${fmt} reader successfully built.${srl}"
 fi
