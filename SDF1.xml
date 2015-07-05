@@ -17,6 +17,8 @@
       ../C/src/sdf_input_cartesian.c
       ../C/src/sdf_input_point.c
       ../C/src/sdf_input_station.c
+      ../C/src/sdf_modify.c
+      ../C/src/sdf_output.c
       ../C/src/sdf_util.c
       ../C/src/stack_allocator.c
     </Files>
