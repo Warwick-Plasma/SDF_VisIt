@@ -14,6 +14,7 @@
       commit_info.h
       ../C/src/sdf_control.c
       ../C/src/sdf_derived.c
+      ../C/src/sdf_extension_util.c
       ../C/src/sdf_helper.c
       ../C/src/sdf_input.c
       ../C/src/sdf_input_cartesian.c
