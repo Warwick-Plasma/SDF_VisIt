@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
   <Plugin name="SDF" type="database" label="Self Describing Format"
-      version="1.5.2" enabled="true" mdspecificcode="false"
+      version="1.5.3" enabled="true" mdspecificcode="false"
       engspecificcode="false" onlyengine="false" noengine="false" dbtype="STMD"
       haswriter="false" hasoptions="true" filePatternsStrict="false"
       opensWholeDirectory="false">
@@ -13,6 +13,7 @@
       commit_info.h
       ../C/src/sdf_control.c
       ../C/src/sdf_derived.c
+      ../C/src/sdf_extension_util.c
       ../C/src/sdf_input.c
       ../C/src/sdf_input_cartesian.c
       ../C/src/sdf_input_point.c
