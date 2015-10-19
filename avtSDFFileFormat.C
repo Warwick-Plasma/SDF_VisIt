@@ -341,10 +341,11 @@ avtSDFFileFormat::PopulateDatabaseMetaData(avtDatabaseMetaData *md)
     snprintf(buf, 1024, "\n SDF reader commit ID: %s\n "
         "SDF reader commit date: %s\n SDF reader build date: %s\n "
         "Job ID: %d.%d\n Code name: %s\n Code I/O version: %d\n "
-        "File revision: %d\n Restart flag: %d\n Other domains: %d",
+        "File revision: %d\n Restart flag: %d\n Other domains: %d\n",
+        "Station flag: %d",
         SDF_COMMIT_ID, SDF_COMMIT_DATE, SDF_READER_BUILD_DATE,
         h->jobid1, h->jobid2, h->code_name, h->code_io_version,
-        h->file_revision, h->restart_flag, h->other_domains);
+        h->file_revision, h->restart_flag, h->other_domains, h->station_flag);
 
     md->SetDatabaseComment(buf);
 
