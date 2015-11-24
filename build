@@ -15,7 +15,7 @@ DEBUG=""
 PRIVATE="-private"
 VERBOSE=""
 OPTS=""
-PLUGNDIR=""
+PLUGINDIR=""
 err=0
 stop=0
 
