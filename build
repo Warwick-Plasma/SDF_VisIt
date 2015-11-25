@@ -99,6 +99,24 @@ if [ $? -eq 0 ]; then
   stdlib="-stdlib=libstdc++ $CXXFLAGS"
 fi
 
+# Sanity check for version 1 or 2 of visit
+if [ $clean -ne 2 -a "$version"x != 1x -a "$version"x != 2x ]; then
+  echo "ERROR: unable to locate either version 1 or 2 of VisIt"
+  echo "The output from 'visit -version' was the following:"
+  visit -version
+  visit -version 2>&1 | grep 'will be launched' > /dev/null
+  if [ $? -eq 0 ]; then
+    cat<<EOF
+It looks as if the visit command in your PATH has been built from source and
+not installed. 3rd party plugins are not supported for this configuration.
+You need to install visit properly by cd'ing to the visitX.X.X/src directory
+and typing either "make install" or "make package". The latter command will
+create a zipped archive which you can then unpack to the desired location.
+EOF
+  fi
+  exit 1
+fi
+
 buildit () {
   err=0
 
