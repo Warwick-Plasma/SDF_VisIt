@@ -16,6 +16,7 @@ PRIVATE="-private"
 VERBOSE=""
 OPTS=""
 PLUGINDIR=""
+LDFLAGS=""
 err=0
 stop=0
 
@@ -147,6 +148,18 @@ CC=mpicc," Makefile > .Makefile.tmp
          sed -i '/VISIT_PLUGIN_DIR/ s;".*";"'$PLUGINDIR'";' CMakeLists.txt
       fi
       setup=$(grep -w PluginVsInstall.cmake CMakeLists.txt | cut -f2 -d\")
+      if [ $build_type -ne 2 ]; then
+        build_cxx=/$(grep CMAKE_CXX_COMPILER $setup \
+            | head -1 | cut -f2- -d\/ | cut -f1 -d\))
+        if [ -x $build_cxx ]; then
+          export CXX=$build_cxx
+        fi
+        build_cc=/$(grep CMAKE_C_COMPILER $setup \
+            | head -1 | cut -f2- -d\/ | cut -f1 -d\))
+        if [ -x $build_cc ]; then
+          export CC=$build_cc
+        fi
+      fi
       grep -w clang $setup > /dev/null
       if [ $? -ne 0 ]; then
         # If using clang when original was compiled with gcc, then we need
