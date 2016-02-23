@@ -15,7 +15,8 @@ DEBUG=""
 PRIVATE="-private"
 VERBOSE=""
 OPTS=""
-PLUGNDIR=""
+PLUGINDIR=""
+LDFLAGS=""
 err=0
 stop=0
 
@@ -98,6 +99,24 @@ if [ $? -eq 0 ]; then
   stdlib="-stdlib=libstdc++ $CXXFLAGS"
 fi
 
+# Sanity check for version 1 or 2 of visit
+if [ $clean -ne 2 -a "$version"x != 1x -a "$version"x != 2x ]; then
+  echo "ERROR: unable to locate either version 1 or 2 of VisIt"
+  echo "The output from 'visit -version' was the following:"
+  visit -version
+  visit -version 2>&1 | grep 'will be launched' > /dev/null
+  if [ $? -eq 0 ]; then
+    cat<<EOF
+It looks as if the visit command in your PATH has been built from source and
+not installed. 3rd party plugins are not supported for this configuration.
+You need to install visit properly by cd'ing to the visitX.X.X/src directory
+and typing either "make install" or "make package". The latter command will
+create a zipped archive which you can then unpack to the desired location.
+EOF
+  fi
+  exit 1
+fi
+
 buildit () {
   err=0
 
@@ -147,6 +166,18 @@ CC=mpicc," Makefile > .Makefile.tmp
          sed -i '/VISIT_PLUGIN_DIR/ s;".*";"'$PLUGINDIR'";' CMakeLists.txt
       fi
       setup=$(grep -w PluginVsInstall.cmake CMakeLists.txt | cut -f2 -d\")
+      if [ $build_type -ne 2 ]; then
+        build_cxx=/$(grep CMAKE_CXX_COMPILER $setup \
+            | head -1 | cut -f2- -d\/ | cut -f1 -d\))
+        if [ -x $build_cxx ]; then
+          export CXX=$build_cxx
+        fi
+        build_cc=/$(grep CMAKE_C_COMPILER $setup \
+            | head -1 | cut -f2- -d\/ | cut -f1 -d\))
+        if [ -x $build_cc ]; then
+          export CC=$build_cc
+        fi
+      fi
       grep -w clang $setup > /dev/null
       if [ $? -ne 0 ]; then
         # If using clang when original was compiled with gcc, then we need
