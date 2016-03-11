@@ -264,10 +264,14 @@ get_old_build_type () {
   return $type
 }
 
-if [ $clean -ge 2 ]; then
+if [ $clean -ge 1 ]; then
   make clean > /dev/null 2>&1
   rm -rf CMake* cmake* Makefile ${fmt}*Info.C ${fmt}*Info.h $tmpdir
-elif [ $build_visit_reader -eq 1 ]; then
+  if [ $clean -ge 2 ] ; then
+     exit
+  fi
+fi
+if [ $build_visit_reader -eq 1 ]; then
   sh gen_commit_string.sh
   echo "#define SDF_READER_BUILD_DATE \"`date`\"" > build_date.h
 
