@@ -189,11 +189,13 @@ CC=mpicc," Makefile > .Makefile.tmp
         base=`basename $f`
         com1=vtkCommonDataModel
         com2=vtkCommonExecutionModel
-        sed 's/\([;"]'$com1'-\)\([^;]*\)/\1\2;'$com2'-\2/' \
+        sed 's/\([;"]'$com1'-\)\([^;]*\)/\1\2;'$com2'-\2/;
+             s,/Users/miller86/[^;]*;,,g' \
             $f > $tmpdir/$base
         if [ $build_type -eq 2 ]; then
           sed 's/\([;"]\)[^;]*libmpi[^;]*;/\1/g;
                s/\([;"]\)[^;]*libopen-[^;]*;/\1/g;
+               s,/Users/miller86/[^;]*;,,g;
                s/\([;"]\)[^;]*general[^;]*;/\1/g' $f > $tmpdir/$base
           grep -v 'CMAKE_CXX_COMPILER ' $tmpdir/$base | \
               grep -v 'CMAKE_C_COMPILER ' | \
@@ -202,6 +204,7 @@ CC=mpicc," Makefile > .Makefile.tmp
         elif [ $build_type -eq 3 ]; then
           sed 's/\([;"]\)[^;]*libmpi[^;]*;/\1/g;
                s/\([;"]\)[^;]*libopen-[^;]*;/\1/g;
+               s,/Users/miller86/[^;]*;,,g;
                s/\([;"]\)[^;]*general[^;]*;/\1/g' $f > $tmpdir/$base
           grep -v 'VISIT_PARALLEL ' $tmpdir/$base > $tmpdir/tmp
           mv $tmpdir/tmp $tmpdir/$base
