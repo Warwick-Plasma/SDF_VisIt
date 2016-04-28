@@ -116,6 +116,7 @@ void avtSDFFileFormat::sdf_extension_unload(void)
 void
 avtSDFFileFormat::OpenFile(int open_only)
 {
+    if (h) return;
     if (!h) h = sdf_open(filename, comm, SDF_READ, 0);
     if (!h) EXCEPTION1(InvalidFilesException, filename);
     h->stack_handle = stack_handle;
@@ -237,10 +238,10 @@ avtSDFFileFormat::avtSDFFileFormat(const char *filename,
     stack_handle = stack_init();
     ext = NULL;
 
-    if (avtDatabase::OnlyServeUpMetaData()) {
-        debug1 << "avtSDFFileFormat::OpenFile(1) call " << __LINE__ << endl;
-        OpenFile(1);
-    }
+#ifdef MDSERVER
+    debug1 << "avtSDFFileFormat::OpenFile(1) call " << __LINE__ << endl;
+    OpenFile(1);
+#endif
 }
 
 
@@ -263,7 +264,8 @@ avtSDFFileFormat::FreeUpResources(void)
 {
     debug1 << "avtSDFFileFormat::FreeUpResources(void) " << this << endl;
     stack_free(stack_handle);
-    sdf_free_blocklist_data(h);
+    sdf_close(h);
+    h = NULL;
 }
 
 
@@ -571,6 +573,10 @@ avtSDFFileFormat::PopulateDatabaseMetaData(avtDatabaseMetaData *md)
 #ifdef SDF_DEBUG
     debug1 << "avtSDFFileFormat:: SDF debug buffer: ";
     debug1 << h->dbg_buf; h->dbg = h->dbg_buf; *h->dbg = '\0';
+#endif
+#ifdef MDSERVER
+    sdf_close(h);
+    h = NULL;
 #endif
 }
 
