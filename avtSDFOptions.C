@@ -42,6 +42,7 @@ GetSDFReadOptions(void)
     DBOptionsAttributes *rv = new DBOptionsAttributes;
     rv->SetBool(SDF_RDOPT_CONVERT_FLOAT, false);
     rv->SetBool(SDF_RDOPT_RANDOMISE, false);
+    rv->SetBool(SDF_RDOPT_BOUNDARY, false);
     return rv;
 }
 
