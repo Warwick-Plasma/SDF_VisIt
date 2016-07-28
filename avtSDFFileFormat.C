@@ -226,6 +226,7 @@ avtSDFFileFormat::avtSDFFileFormat(const char *filename,
     use_float = 0;
     use_random = 0;
     use_boundary = 0;
+    use_allboundary = 0;
     for (int i = 0; readOpts && i < readOpts->GetNumberOfOptions(); i++) {
         if (readOpts->GetName(i) == SDF_RDOPT_CONVERT_FLOAT)
             use_float = readOpts->GetBool(SDF_RDOPT_CONVERT_FLOAT) ? 1 : 0;
@@ -233,10 +234,13 @@ avtSDFFileFormat::avtSDFFileFormat(const char *filename,
             use_random = readOpts->GetBool(SDF_RDOPT_RANDOMISE) ? 1 : 0;
         else if (readOpts->GetName(i) == SDF_RDOPT_BOUNDARY)
             use_boundary = readOpts->GetBool(SDF_RDOPT_BOUNDARY) ? 1 : 0;
+        else if (readOpts->GetName(i) == SDF_RDOPT_ALLBOUNDARY)
+            use_allboundary = readOpts->GetBool(SDF_RDOPT_ALLBOUNDARY) ? 1 : 0;
         else
             debug1 << "Ignoring unknown option \"" << readOpts->GetName(i)
                    << "\"" << endl;
     }
+    if (use_allboundary) use_boundary = 1;
 
     stack_handle = stack_init();
     ext = NULL;
@@ -396,9 +400,13 @@ avtSDFFileFormat::PopulateDatabaseMetaData(avtDatabaseMetaData *md)
                 b->blocktype == SDF_BLOCKTYPE_PLAIN_DERIVED ||
                 b->blocktype == SDF_BLOCKTYPE_POINT_DERIVED) {
 
-            if (use_boundary == 0 && b->mesh_id &&
-                memcmp(b->mesh_id, "boundary", 8) == 0)
+            if (use_allboundary == 0 && b->mesh_id &&
+                memcmp(b->mesh_id, "boundary", 8) == 0) {
+                if (use_boundary == 0)
                     continue;
+                else if (b->mesh_id[8] == '_')
+                    continue;
+            }
 
             // Now fill the metadata for a 1d or nd scalar variable
             sdf_block_t *mesh = sdf_find_block_by_id(h, b->mesh_id);
