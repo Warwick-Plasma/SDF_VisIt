@@ -163,7 +163,22 @@ CC=mpicc," Makefile > .Makefile.tmp
     else
       xml2cmake -clobber $PRIVATE ${fmt}${version}.xml
       if [ -n "$PLUGINDIR" ] ; then
-         sed -i '/VISIT_PLUGIN_DIR/ s;".*";"'$PLUGINDIR'";' CMakeLists.txt
+         # Change the VisIt plugin directory
+         sed '/VISIT_PLUGIN_DIR/ s;".*";"'$PLUGINDIR'";' \
+             CMakeLists.txt > $tmpdir/tmp
+         \mv -f $tmpdir/tmp CMakeLists.txt
+
+         # Add directories to the runtime path.
+         # This avoids having to set LD_LIBRARY_PATH in the bash environment
+         # to find sdf_extension.so.
+         # Assume that it is one level up from the VisIt plugin directory.
+         # FIXME: This should be configurable.
+         RPATH=$(dirname $PLUGINDIR)
+         sed '/PROJECT/ a\
+LIST(APPEND CMAKE_INSTALL_RPATH "'"$RPATH"'")\
+SET(CMAKE_BUILD_WITH_INSTALL_RPATH ON)\
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)' CMakeLists.txt > $tmpdir/tmp
+         \mv -f $tmpdir/tmp CMakeLists.txt
       fi
       setup=$(grep -w PluginVsInstall.cmake CMakeLists.txt | cut -f2 -d\")
       if [ $build_type -ne 2 ]; then
