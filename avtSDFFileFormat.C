@@ -590,6 +590,7 @@ avtSDFFileFormat::PopulateDatabaseMetaData(avtDatabaseMetaData *md)
     debug1 << h->dbg_buf; h->dbg = h->dbg_buf; *h->dbg = '\0';
 #endif
 #ifdef MDSERVER
+    stack_free(stack_handle);
     sdf_close(h);
     h = NULL;
 #endif
