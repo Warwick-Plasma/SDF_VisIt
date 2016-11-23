@@ -25,6 +25,8 @@ namespace SDFDBOptions
     const char *const SDF_RDOPT_CONVERT_FLOAT =
             "Read double variables as floats to save memory";
     const char *const SDF_RDOPT_RANDOMISE = "Randomise particle data";
+    const char *const SDF_RDOPT_BOUNDARY = "Populate boundary variables";
+    const char *const SDF_RDOPT_ALLBOUNDARY = "Populate side boundary variables";
 }
 
 // ****************************************************************************
