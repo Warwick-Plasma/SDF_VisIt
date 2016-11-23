@@ -228,6 +228,15 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)' CMakeLists.txt > $tmpdir/tmp
             CMakeLists.txt > $tmpdir/tmp
         mv $tmpdir/tmp CMakeLists.txt
       done
+      # Fixup the cmake file for broken versions of VisIt
+      if [ $fullversion = "2.7.2." -o $fullversion = "2.7.3." ]; then
+        setup=$(grep -w PluginVsInstall.cmake CMakeLists.txt | cut -f2 -d\")
+        sed 's/\(.*GET currentDefs\)/if (currentDefs)\
+\1/;
+           s/\(ENDIF(${firstItem}.*\)/\1\
+endif()/' $setup > $tmpdir/tmp
+        mv $tmpdir/tmp $setup
+      fi
     fi
     cmake $DEBUG .
     # FIXME: This is to workaround incorrect cmake output
