@@ -228,13 +228,23 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)' CMakeLists.txt > $tmpdir/tmp
             CMakeLists.txt > $tmpdir/tmp
         mv $tmpdir/tmp CMakeLists.txt
       done
+      setup=$(grep -w PluginVsInstall.cmake CMakeLists.txt | cut -f2 -d\")
       # Fixup the cmake file for broken versions of VisIt
       if [ $fullversion = "2.7.2." -o $fullversion = "2.7.3." ]; then
-        setup=$(grep -w PluginVsInstall.cmake CMakeLists.txt | cut -f2 -d\")
         sed 's/\(.*GET currentDefs\)/if (currentDefs)\
 \1/;
            s/\(ENDIF(${firstItem}.*\)/\1\
 endif()/' $setup > $tmpdir/tmp
+        mv $tmpdir/tmp $setup
+      else
+        fpath=/Applications/VisIt.app/Contents/Resources/${fullversion%%.}/
+        sed 's,EAVL_INCLUDE_DIR /Users.*/eavl/[^/]*/\(.*\)),EAVL_INCLUDE_DIR \
+ '$fpath'\1/eavl/include),;
+           s,BOOST_INCLUDE_DIR /Users.*/boost/[^/]*/\(.*\)),BOOST_INCLUDE_DIR \
+ '$fpath'\1/boost/include),;
+           s,EAVL_LIBRARY_DIR /Users.*/eavl/[^/]*/\(.*\)/lib),EAVL_LIBRARY_DIR \
+ '$fpath'\1/archives),' \
+           $setup > $tmpdir/tmp
         mv $tmpdir/tmp $setup
       fi
     fi
