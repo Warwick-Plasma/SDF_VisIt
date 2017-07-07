@@ -1583,7 +1583,7 @@ avtSDFFileFormat::GetSpeciesType(sdf_block_t *sblock, int domain)
 
     int nelements_local = vfm_block->nelements_local;
     int ndims = vfm_block->ndims;
-    int dims[ndims];
+    int *dims = new int[ndims];
     for (int i = 0; i < ndims; i++) dims[i] = vfm_block->dims[i];
 
     int nmf = 0;
@@ -1646,6 +1646,7 @@ avtSDFFileFormat::GetSpeciesType(sdf_block_t *sblock, int domain)
     delete [] vfm_ptrs;
     delete [] speclist;
     delete [] specmf;
+    delete [] dims;
 
 #ifdef SDF_DEBUG
     debug1 << "avtSDFFileFormat:: SDF debug buffer: ";
