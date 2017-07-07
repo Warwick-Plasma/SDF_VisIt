@@ -50,7 +50,10 @@
 #include <InvalidFilesException.h>
 #include <InvalidVariableException.h>
 
+#ifndef _WIN32
 #include <dlfcn.h>
+#endif
+
 #include "commit_info.h"
 #include "build_date.h"
 #include "sdf_helper.h"
@@ -64,6 +67,7 @@ int avtSDFFileFormat::extension_not_found = 0;
 
 sdf_extension_t *avtSDFFileFormat::sdf_extension_load(sdf_file_t *h)
 {
+#ifndef _WIN32
     if (avtSDFFileFormat::extension_not_found) return NULL;
     debug1 << "avtSDFFileFormat::sdf_extension_load " << h << endl;
 
@@ -87,11 +91,15 @@ sdf_extension_t *avtSDFFileFormat::sdf_extension_load(sdf_file_t *h)
     if (!ext) avtSDFFileFormat::extension_not_found = 1;
 
     return ext;
+#else
+    return NULL;
+#endif
 }
 
 
 void avtSDFFileFormat::sdf_extension_unload(void)
 {
+#ifndef _WIN32
     if (!sdf_extension_handle) return;
 
     sdf_extension_destroy_t *sdf_extension_destroy =
@@ -104,6 +112,7 @@ void avtSDFFileFormat::sdf_extension_unload(void)
 
     sdf_extension_destroy = NULL;
     ext = NULL;
+#endif
 
     return;
 }
