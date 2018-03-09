@@ -260,6 +260,22 @@ endif()/' $setup > $tmpdir/tmp
     fi
   fi
 
+  gnu=$(grep CXX_COMPILER_ID CMakeFiles/*/CMakeCXXCompiler.cmake | grep GNU)
+  if [ "$gnu"x != x ]; then
+    # Test for compatible version
+
+    setup=$(grep -w PluginVsInstall.cmake CMakeLists.txt | cut -f2 -d\")
+    gxxver=$(grep -A10 'compiler version information' $setup | grep g++ \
+             | head -1 | cut -f2 -d\) | cut -f2 -d' ' | cut -f1 -d\.)
+    cxxver=$(grep CXX_COMPILER_VERSION CMakeFiles/*/CMakeCXXCompiler.cmake \
+             | cut -f2 -d\" | cut -f1 -d\.)
+    if [ $cxxver -ne $gxxver ]; then
+      echo "ERROR: g++ version is incompatible with VisIt"
+      echo "The reader must be compiled using g++ $gxxver.x"
+      exit 1
+    fi
+  fi
+
   if [ $clean -ge 1 ] ; then make clean ; fi
   make $VERBOSE
   err=$?
