@@ -182,12 +182,12 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)' CMakeLists.txt > $tmpdir/tmp
       fi
       setup=$(grep -w PluginVsInstall.cmake CMakeLists.txt | cut -f2 -d\")
       if [ $build_type -ne 2 ]; then
-        build_cxx=/$(grep CMAKE_CXX_COMPILER $setup \
+        build_cxx=$(grep CMAKE_CXX_COMPILER $setup \
             | head -1 | cut -f2- -d\/ | cut -f1 -d\))
         if [ -x $build_cxx ]; then
           export CXX=$build_cxx
         fi
-        build_cc=/$(grep CMAKE_C_COMPILER $setup \
+        build_cc=$(grep CMAKE_C_COMPILER $setup \
             | head -1 | cut -f2- -d\/ | cut -f1 -d\))
         if [ -x $build_cc ]; then
           export CC=$build_cc
