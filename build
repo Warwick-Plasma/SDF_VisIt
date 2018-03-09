@@ -10,6 +10,7 @@ clean=0
 build_type=0
 build_visit_reader=1
 build_utilities=0
+force=0
 DBG=""
 DEBUG=""
 PRIVATE="-private"
@@ -20,7 +21,7 @@ LDFLAGS=""
 err=0
 stop=0
 
-while getopts crdpnuvh123i: name
+while getopts crdpnuvfh123i: name
 do
    case $name in
       c) clean=2 ; OPTS="$OPTS -c";;
@@ -31,6 +32,7 @@ do
       n) build_visit_reader=0 ;;
       u) build_utilities=1 ;;
       v) VERBOSE="VERBOSE=1" ;;
+      f) force=1 ;;
       h) cat <<EOF
 The VisIt build script attempts to automate the process of building the SDF
 VisIt reader plugin on a variety of platforms. By default it will try three
@@ -50,6 +52,8 @@ VisIt build script options:
   -i VISITPLUGINDIR:
       Install the reader plugin in the path VISITPLUGINDIR
   -v: Build verbosely.
+  -f: Force build. This prevents the build script from checking
+      g++ compatibility
   -1: Perform only the default VisIt build.
   -2: Perform only a parallel VisIt build.
   -3: Perform only a serial VisIt build.
@@ -182,12 +186,12 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)' CMakeLists.txt > $tmpdir/tmp
       fi
       setup=$(grep -w PluginVsInstall.cmake CMakeLists.txt | cut -f2 -d\")
       if [ $build_type -ne 2 ]; then
-        build_cxx=/$(grep CMAKE_CXX_COMPILER $setup \
+        build_cxx=$(grep CMAKE_CXX_COMPILER $setup \
             | head -1 | cut -f2- -d\/ | cut -f1 -d\))
         if [ -x $build_cxx ]; then
           export CXX=$build_cxx
         fi
-        build_cc=/$(grep CMAKE_C_COMPILER $setup \
+        build_cc=$(grep CMAKE_C_COMPILER $setup \
             | head -1 | cut -f2- -d\/ | cut -f1 -d\))
         if [ -x $build_cc ]; then
           export CC=$build_cc
@@ -257,6 +261,22 @@ endif()/' $setup > $tmpdir/tmp
            /linux-x86_64\/lib\/librt\.so/ d;
            /linux-x86_64\/lib\/libpthread\.so/ d' $ofile > $tmpdir/tmp
       mv $tmpdir/tmp $ofile
+    fi
+  fi
+
+  gnu=$(grep CXX_COMPILER_ID CMakeFiles/*/CMakeCXXCompiler.cmake | grep GNU)
+  if [ $force -eq 0 -a "$gnu"x != x ]; then
+    # Test for compatible version
+
+    setup=$(grep -w PluginVsInstall.cmake CMakeLists.txt | cut -f2 -d\")
+    gxxver=$(grep -A10 'compiler version information' $setup | grep g++ \
+             | head -1 | cut -f2 -d\) | cut -f2 -d' ' | cut -f1 -d\.)
+    cxxver=$(grep CXX_COMPILER_VERSION CMakeFiles/*/CMakeCXXCompiler.cmake \
+             | cut -f2 -d\" | cut -f1 -d\.)
+    if [ $cxxver -ne $gxxver ]; then
+      echo "ERROR: g++ version is incompatible with VisIt"
+      echo "The reader must be compiled using g++ $gxxver.x"
+      exit 1
     fi
   fi
 
