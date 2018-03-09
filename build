@@ -10,6 +10,7 @@ clean=0
 build_type=0
 build_visit_reader=1
 build_utilities=0
+force=0
 DBG=""
 DEBUG=""
 PRIVATE="-private"
@@ -20,7 +21,7 @@ LDFLAGS=""
 err=0
 stop=0
 
-while getopts crdpnuvh123i: name
+while getopts crdpnuvfh123i: name
 do
    case $name in
       c) clean=2 ; OPTS="$OPTS -c";;
@@ -31,6 +32,7 @@ do
       n) build_visit_reader=0 ;;
       u) build_utilities=1 ;;
       v) VERBOSE="VERBOSE=1" ;;
+      f) force=1 ;;
       h) cat <<EOF
 The VisIt build script attempts to automate the process of building the SDF
 VisIt reader plugin on a variety of platforms. By default it will try three
@@ -50,6 +52,8 @@ VisIt build script options:
   -i VISITPLUGINDIR:
       Install the reader plugin in the path VISITPLUGINDIR
   -v: Build verbosely.
+  -f: Force build. This prevents the build script from checking
+      g++ compatibility
   -1: Perform only the default VisIt build.
   -2: Perform only a parallel VisIt build.
   -3: Perform only a serial VisIt build.
@@ -261,7 +265,7 @@ endif()/' $setup > $tmpdir/tmp
   fi
 
   gnu=$(grep CXX_COMPILER_ID CMakeFiles/*/CMakeCXXCompiler.cmake | grep GNU)
-  if [ "$gnu"x != x ]; then
+  if [ $force -eq 0 -a "$gnu"x != x ]; then
     # Test for compatible version
 
     setup=$(grep -w PluginVsInstall.cmake CMakeLists.txt | cut -f2 -d\")
