@@ -209,7 +209,7 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)' CMakeLists.txt > $tmpdir/tmp
         com1=vtkCommonDataModel
         com2=vtkCommonExecutionModel
         sed 's/\([;"]'$com1'-\)\([^;]*\)/\1\2;'$com2'-\2/;
-             s,/Users/miller86/[^;]*;,,g' \
+             s,[^; "]*miller86[^;]*/,,g' \
             $f > $tmpdir/$base
         if [ $build_type -eq 2 ]; then
           sed 's/\([;"]\)[^;]*libmpi[^;]*;/\1/g;
