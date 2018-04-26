@@ -44,6 +44,7 @@ GetSDFReadOptions(void)
     rv->SetBool(SDF_RDOPT_RANDOMISE, false);
     rv->SetBool(SDF_RDOPT_BOUNDARY, false);
     rv->SetBool(SDF_RDOPT_ALLBOUNDARY, false);
+    rv->SetBool(SDF_RDOPT_OB_BOUNDARY, true);
     return rv;
 }
 
