@@ -394,6 +394,17 @@ avtSDFFileFormat::PopulateDatabaseMetaData(avtDatabaseMetaData *md)
         } else if (b->blocktype == SDF_BLOCKTYPE_UNSTRUCTURED_MESH) {
             debug1 << "avtSDFFileFormat:: Found mesh: id:" << b->id
                    << ", name:" << b->name << endl;
+
+            if (use_allboundary == 0 && memcmp(b->id, "boundary", 8) == 0) {
+                if (use_boundary == 0)
+                    continue;
+                else if (b->id[8] == '_')
+                    continue;
+            }
+
+            if (use_ob_boundary == 0 && memcmp(b->id, "obmsh", 5) == 0)
+                    continue;
+
             sdf_block_t *mesh = sdf_find_block_by_id(h, b->subblock->mesh_id);
             avtMeshType meshtype = AVT_UNSTRUCTURED_MESH;
             int topol = b->ndims-1, ndims = b->ndims;
