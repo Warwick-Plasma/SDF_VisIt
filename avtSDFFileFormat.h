@@ -164,7 +164,7 @@ class avtSDFFileFormat : public avtSTMDFileFormat
   protected:
     // DATA MEMBERS
     int rank, ncpus, ndomains, step;
-    int use_float, use_random, use_boundary, use_allboundary;
+    int use_float, use_random, use_boundary, use_allboundary, use_ob_boundary;
     double time;
     comm_t comm;
     sdf_file_t *h;
