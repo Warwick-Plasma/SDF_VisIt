@@ -343,6 +343,7 @@ avtSDFFileFormat::PopulateDatabaseMetaData(avtDatabaseMetaData *md)
     md->SetDatabaseComment(buf);
 
     md->SetMustAlphabetizeVariables(false);
+    md->SetFormatCanDoDomainDecomposition(true);
 
     sdf_block_t *b, *next = h->blocklist;
     for (int i = 0; i < h->nblocks; i++) {
@@ -575,10 +576,58 @@ avtSDFFileFormat::PopulateDatabaseMetaData(avtDatabaseMetaData *md)
 
             AddSpeciesToMetaData(md, b->name, mesh->name, mat->name,
                 matdims, nspec, specnames);
+        } else if (b->blocktype == SDF_BLOCKTYPE_STITCHED && b->stagger == 11) {
+            avtMeshMetaData *mmd = new avtMeshMetaData(b->name, 1, 0, 0, 0,
+                2, 2, AVT_AMR_MESH);
+
+            md->SetFormatCanDoDomainDecomposition(false);
+
+            mmd->groupTitle = b->id;
+            mmd->hasSpatialExtents = false;
+
+            sdf_block_t *gb, *sb;
+            vector<string> blockNames, groupNames;
+            vector<int> groupIds;
+
+            for (unsigned int ng = 0 ; ng < b->ndims ; ng++) {
+                gb = sdf_find_block_by_id(h, b->variable_ids[ng]);
+                groupNames.push_back(gb->name);
+                for (unsigned int n = 0 ; n < gb->ndims ; n++) {
+                    sb = sdf_find_block_by_id(h, gb->variable_ids[n]);
+                    blockNames.push_back(sb->id);
+                    groupIds.push_back(ng);
+                }
+            }
+
+            mmd->blockTitle = strndup(sb->name, h->string_length);
+            for (int i = 0 ; i < mmd->blockTitle.length() ; i++) {
+                if (mmd->blockTitle[i] == '/') {
+                    mmd->blockTitle.resize(i);
+                    break;
+                }
+            }
+
+            mmd->groupIds = groupIds;
+            mmd->numGroups = groupNames.size();
+            mmd->groupNames = groupNames;
+            mmd->numBlocks = blockNames.size();
+            mmd->blockNames = blockNames;
+            md->Add(mmd);
+        } else if (b->blocktype == SDF_BLOCKTYPE_STITCHED && b->stagger == 12) {
+            sdf_block_t *mesh = sdf_find_block_by_id(h, b->mesh_id);
+            if (!mesh) continue;
+
+            avtScalarMetaData *smd = new avtScalarMetaData();
+            smd->name = b->name;
+            smd->meshName = mesh->name;
+            smd->centering = AVT_NODECENT;
+            smd->hasDataExtents = false;
+            smd->treatAsASCII = false;
+            //smd->hasUnits = true;
+            //smd->units = b->units;
+            md->Add(smd);
         }
     }
-
-    md->SetFormatCanDoDomainDecomposition(true);
 
     //
     // CODE TO ADD A VECTOR VARIABLE
@@ -655,6 +704,22 @@ avtSDFFileFormat::GetMesh(int domain, const char *meshname)
     sdf_block_t *b = sdf_find_block_by_name(h, meshname);
     if (!b) EXCEPTION1(InvalidVariableException, meshname);
     h->current_block = b;
+
+    if (b->blocktype == SDF_BLOCKTYPE_STITCHED && b->stagger == 11) {
+        sdf_block_t *gb;
+        int index = domain;
+        for (unsigned int ng = 0 ; ng < b->ndims ; ng++) {
+            gb = sdf_find_block_by_id(h, b->variable_ids[ng]);
+            if (!gb) EXCEPTION1(InvalidVariableException, meshname);
+            if (index < gb->ndims) {
+                b = sdf_find_block_by_id(h, gb->variable_ids[index]);
+                if (!b) EXCEPTION1(InvalidVariableException, meshname);
+                break;
+            } else {
+                index -= gb->ndims;
+            }
+        }
+    }
 
     debug1 << "avtSDFFileFormat:: Found block: id:" << b->id << " for mesh:"
            << meshname << endl;
@@ -1069,6 +1134,22 @@ avtSDFFileFormat::GetArray(int domain, const char *varname)
 
     sdf_block_t *b = sdf_find_block_by_name(h, varname);
     if (!b) return NULL;
+
+    if (b->blocktype == SDF_BLOCKTYPE_STITCHED && b->stagger == 12) {
+        sdf_block_t *gb;
+        int index = domain;
+        for (unsigned int ng = 0 ; ng < b->ndims ; ng++) {
+            gb = sdf_find_block_by_id(h, b->variable_ids[ng]);
+            if (!gb) EXCEPTION1(InvalidVariableException, varname);
+            if (index < gb->ndims) {
+                b = sdf_find_block_by_id(h, gb->variable_ids[index]);
+                if (!b) EXCEPTION1(InvalidVariableException, varname);
+                break;
+            } else {
+                index -= gb->ndims;
+            }
+        }
+    }
 
     debug1 << "avtSDFFileFormat:: Found block: id:" << b->id << " for var:"
            << varname << " type " << b->blocktype << endl;
