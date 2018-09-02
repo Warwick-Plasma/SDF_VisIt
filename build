@@ -223,8 +223,8 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)' CMakeLists.txt > $tmpdir/tmp
         elif [ $build_type -eq 3 ]; then
           sed 's/\([;"]\)[^;]*libmpi[^;]*;/\1/g;
                s/\([;"]\)[^;]*libopen-[^;]*;/\1/g;
-               s,[^; "]*/Users[^;]*/,,g;
-               s/\([;"]\)[^;]*general[^;]*;/\1/g' $f > $tmpdir/$base
+               s,\(${VISIT_LIBRARY_DIR}/\).*/\([^/;]*;\),\1\2,g;
+               s,[^; "]*/Users[^;]*/,,g' $f > $tmpdir/$base
           grep -v 'VISIT_PARALLEL ' $tmpdir/$base > $tmpdir/tmp
           mv $tmpdir/tmp $tmpdir/$base
         fi
