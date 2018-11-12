@@ -11,3 +11,5 @@ Makefile
 commit_info.h
 build_date.h
 .builddir
+include
+lib
