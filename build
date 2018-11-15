@@ -227,27 +227,31 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)' CMakeLists.txt > $tmpdir/tmp
         com1=vtkCommonDataModel
         com2=vtkCommonExecutionModel
         sed 's/\([;"]'$com1'-\)\([^;]*\)/\1\2;'$com2'-\2/;
+             s,${VISIT_LIBRARY_DIR}/${VISIT_LIBRARY_DIR}${VISIT_LIBRARY_DIR},,g;
              s,[^; "]*/Users[^;]*/,,g' \
             $f > $tmpdir/tmp
-        mv $tmpdir/tmp $tmpdir/$base
+        grep -Fv -e cognomen_LIB_DEPENDS -e mpicom_LIB_DEPENDS \
+            $tmpdir/tmp > $tmpdir/$base
+        rm $tmpdir/tmp
         if [ $build_type -eq 2 ]; then
           sed 's/\([;"]\)[^;]*libmpi[^;]*;/\1/g;
                s/\([;"]\)[^;]*libopen-[^;]*;/\1/g;
                s,[^; "]*/Users[^;]*/,,g;
+               s,${VISIT_LIBRARY_DIR}/${VISIT_LIBRARY_DIR}${VISIT_LIBRARY_DIR},,g;
                s/\([;"]\)[^;]*general[^;]*;/\1/g' $f > $tmpdir/tmp
-          mv $tmpdir/tmp $tmpdir/$base
-          grep -v 'CMAKE_CXX_COMPILER ' $tmpdir/$base | \
-              grep -v 'CMAKE_C_COMPILER ' | \
-              grep -v 'VISIT_PARALLEL_LIBS ' > $tmpdir/tmp
-          mv $tmpdir/tmp $tmpdir/$base
+          grep -Fv -e cognomen_LIB_DEPENDS -e mpicom_LIB_DEPENDS \
+              -e 'CMAKE_CXX_COMPILER ' -e 'CMAKE_C_COMPILER ' \
+              -e 'VISIT_PARALLEL_LIBS ' $tmpdir/tmp > $tmpdir/$base
+          rm $tmpdir/tmp
         elif [ $build_type -eq 3 ]; then
           sed 's/\([;"]\)[^;]*libmpi[^;]*;/\1/g;
                s/\([;"]\)[^;]*libopen-[^;]*;/\1/g;
+               s,${VISIT_LIBRARY_DIR}/${VISIT_LIBRARY_DIR}${VISIT_LIBRARY_DIR},,g;
                s,\(${VISIT_LIBRARY_DIR}/\).*/\([^/;]*;\),\1\2,g;
                s,[^; "]*/Users[^;]*/,,g' $f > $tmpdir/tmp
-          mv $tmpdir/tmp $tmpdir/$base
-          grep -v 'VISIT_PARALLEL ' $tmpdir/$base > $tmpdir/tmp
-          mv $tmpdir/tmp $tmpdir/$base
+          grep -Fv -e cognomen_LIB_DEPENDS -e mpicom_LIB_DEPENDS \
+              -e 'VISIT_PARALLEL ' $tmpdir/tmp > $tmpdir/$base
+          rm $tmpdir/tmp
         fi
         sed 's,\(INCLUDE(["]*\)'$f'\(["]*\),\1'$tmpdir/$base'\2,' \
             CMakeLists.txt > $tmpdir/tmp
