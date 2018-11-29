@@ -121,6 +121,17 @@ EOF
   exit 1
 fi
 
+copy_cmake_files () {
+  [ -d $tmpdir ] || mkdir -p $tmpdir
+  cp MISC/v2.13.3_ub18/* $tmpdir
+  sed 's,${VISIT_INCLUDE_DIR}/VisItMacros.cmake,'$tmpdir'/VisItMacros.cmake,' \
+      MISC/v2.13.3_ub18/PluginVsInstall.cmake > $tmpdir/PluginVsInstall.cmake
+  sed 's,INCLUDE(".*\(/[^/]*\),INCLUDE("'$tmpdir'\1,' \
+      CMakeLists.txt > $tmpdir/tmp
+  mv $tmpdir/tmp CMakeLists.txt
+  setup=$tmpdir/PluginVsInstall.cmake
+}
+
 buildit () {
   err=0
 
@@ -185,6 +196,13 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)' CMakeLists.txt > $tmpdir/tmp
          \mv -f $tmpdir/tmp CMakeLists.txt
       fi
       setup=$(grep -w PluginVsInstall.cmake CMakeLists.txt | cut -f2 -d\")
+      rm -f include lib
+      inc=$(dirname $setup)
+      ln -s $inc .
+      ln -s $(dirname $inc)/lib .
+      if [ ! -f $setup ]; then
+        copy_cmake_files
+      fi
       if [ $build_type -ne 2 ]; then
         build_cxx=$(grep CMAKE_CXX_COMPILER $setup \
             | head -1 | cut -f2- -d\/ | cut -f1 -d\))
@@ -209,24 +227,31 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)' CMakeLists.txt > $tmpdir/tmp
         com1=vtkCommonDataModel
         com2=vtkCommonExecutionModel
         sed 's/\([;"]'$com1'-\)\([^;]*\)/\1\2;'$com2'-\2/;
+             s,${VISIT_LIBRARY_DIR}/${VISIT_LIBRARY_DIR}${VISIT_LIBRARY_DIR},,g;
              s,[^; "]*/Users[^;]*/,,g' \
-            $f > $tmpdir/$base
+            $f > $tmpdir/tmp
+        grep -Fv -e cognomen_LIB_DEPENDS -e mpicom_LIB_DEPENDS \
+            $tmpdir/tmp > $tmpdir/$base
+        rm $tmpdir/tmp
         if [ $build_type -eq 2 ]; then
           sed 's/\([;"]\)[^;]*libmpi[^;]*;/\1/g;
                s/\([;"]\)[^;]*libopen-[^;]*;/\1/g;
                s,[^; "]*/Users[^;]*/,,g;
-               s/\([;"]\)[^;]*general[^;]*;/\1/g' $f > $tmpdir/$base
-          grep -v 'CMAKE_CXX_COMPILER ' $tmpdir/$base | \
-              grep -v 'CMAKE_C_COMPILER ' | \
-              grep -v 'VISIT_PARALLEL_LIBS ' > $tmpdir/tmp
-          mv $tmpdir/tmp $tmpdir/$base
+               s,${VISIT_LIBRARY_DIR}/${VISIT_LIBRARY_DIR}${VISIT_LIBRARY_DIR},,g;
+               s/\([;"]\)[^;]*general[^;]*;/\1/g' $f > $tmpdir/tmp
+          grep -Fv -e cognomen_LIB_DEPENDS -e mpicom_LIB_DEPENDS \
+              -e 'CMAKE_CXX_COMPILER ' -e 'CMAKE_C_COMPILER ' \
+              -e 'VISIT_PARALLEL_LIBS ' $tmpdir/tmp > $tmpdir/$base
+          rm $tmpdir/tmp
         elif [ $build_type -eq 3 ]; then
           sed 's/\([;"]\)[^;]*libmpi[^;]*;/\1/g;
                s/\([;"]\)[^;]*libopen-[^;]*;/\1/g;
+               s,${VISIT_LIBRARY_DIR}/${VISIT_LIBRARY_DIR}${VISIT_LIBRARY_DIR},,g;
                s,\(${VISIT_LIBRARY_DIR}/\).*/\([^/;]*;\),\1\2,g;
-               s,[^; "]*/Users[^;]*/,,g' $f > $tmpdir/$base
-          grep -v 'VISIT_PARALLEL ' $tmpdir/$base > $tmpdir/tmp
-          mv $tmpdir/tmp $tmpdir/$base
+               s,[^; "]*/Users[^;]*/,,g' $f > $tmpdir/tmp
+          grep -Fv -e cognomen_LIB_DEPENDS -e mpicom_LIB_DEPENDS \
+              -e 'VISIT_PARALLEL ' $tmpdir/tmp > $tmpdir/$base
+          rm $tmpdir/tmp
         fi
         sed 's,\(INCLUDE(["]*\)'$f'\(["]*\),\1'$tmpdir/$base'\2,' \
             CMakeLists.txt > $tmpdir/tmp
