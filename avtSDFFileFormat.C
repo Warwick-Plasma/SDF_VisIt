@@ -57,65 +57,12 @@
 #include "commit_info.h"
 #include "build_date.h"
 #include "sdf_helper.h"
+#include "sdf_extension.h"
 
 using std::string;
 using namespace SDFDBOptions;
-int avtSDFFileFormat::extension_not_found = 0;
 
 #define IJK2(i,j,k) ((i)+ng + (nx+2*ng) * ((j)+ng + (ny+2*ng) * ((k)+ng)))
-
-
-sdf_extension_t *avtSDFFileFormat::sdf_extension_load(sdf_file_t *h)
-{
-#ifndef _WIN32
-    if (avtSDFFileFormat::extension_not_found) return NULL;
-    debug1 << "avtSDFFileFormat::sdf_extension_load " << h << endl;
-
-    sdf_extension_handle = dlopen("sdf_extension.so", RTLD_LAZY);
-
-    if (!sdf_extension_handle) {
-        avtSDFFileFormat::extension_not_found = 1;
-        if (!h->rank) {
-            debug1 << dlerror() << endl;
-        }
-        return NULL;
-    }
-    debug1 << "avtSDFFileFormat::sdf_extension_load success" << endl;
-
-    sdf_extension_create_t *sdf_extension_create =
-        (sdf_extension_create_t *)dlsym(sdf_extension_handle,
-        "sdf_extension_create");
-
-    sdf_extension_t *ext = sdf_extension_create(h);
-
-    if (!ext) avtSDFFileFormat::extension_not_found = 1;
-
-    return ext;
-#else
-    return NULL;
-#endif
-}
-
-
-void avtSDFFileFormat::sdf_extension_unload(void)
-{
-#ifndef _WIN32
-    if (!sdf_extension_handle) return;
-
-    sdf_extension_destroy_t *sdf_extension_destroy =
-        (sdf_extension_destroy_t *)dlsym(sdf_extension_handle,
-        "sdf_extension_destroy");
-
-    sdf_extension_destroy(ext);
-
-    dlclose(sdf_extension_handle);
-
-    sdf_extension_destroy = NULL;
-    ext = NULL;
-#endif
-
-    return;
-}
 
 
 // ****************************************************************************
@@ -157,47 +104,7 @@ avtSDFFileFormat::OpenFile(int open_only)
         EXCEPTION1(InvalidFilesException, filename);
     }
 
-    // Retrieve the extended interface library from the plugin manager
-    if (!ext && !extension_not_found) ext = sdf_extension_load(h);
-
-    if (h->blocklist) {
-        if (ext) ext->timestate_update(ext, h);
-        return;
-    }
-
-    sdf_read_blocklist(h);
-
-    // Append derived data to the blocklist using built-in library.
-    sdf_add_derived_blocks(h);
-
-    if (ext) {
-        char **preload;
-
-        preload = ext->preload(ext, h);
-        // For each entry in the preload array, try to find the block
-        // and populate its data.
-        if (preload) {
-            sdf_block_t *var, *cur;
-            int n = 0;
-            cur = h->current_block;
-            while(preload[n]) {
-                var = sdf_find_block_by_id(h, preload[n]);
-                if (var && !var->data) {
-                    sdf_helper_read_data(h, var);
-                }
-                free(preload[n]);
-                n++;
-            }
-            free(preload);
-            h->current_block = cur;
-        }
-
-        // Append derived data to the blocklist using the extension library.
-        ext->read_blocklist(ext, h);
-    }
-
-    // Append additional derived data for blocks added by the extension.
-    sdf_add_derived_blocks_final(h);
+    sdf_read_blocklist_all(h);
 }
 
 
@@ -230,7 +137,6 @@ avtSDFFileFormat::avtSDFFileFormat(const char *filename,
     memcpy(this->filename, filename, strlen(filename)+1);
     gotMetadata = false;
     h = NULL;
-    sdf_extension_handle = NULL;
 
     use_float = 0;
     use_random = 0;
@@ -255,7 +161,6 @@ avtSDFFileFormat::avtSDFFileFormat(const char *filename,
     if (use_allboundary) use_boundary = 1;
 
     stack_handle = stack_init();
-    ext = NULL;
 
 #ifdef MDSERVER
     debug1 << "avtSDFFileFormat::OpenFile(1) call " << __LINE__ << endl;
@@ -296,7 +201,6 @@ avtSDFFileFormat::~avtSDFFileFormat(void)
     filename = NULL;
     if (h) sdf_close(h);
     h = NULL;
-    sdf_extension_unload();
 }
 
 

@@ -20,7 +20,6 @@
 #include <vector>
 #include "sdf.h"
 #include "sdf_derived.h"
-#include "sdf_extension.h"
 #include "stack_allocator.h"
 
 class DBOptionsAttributes;
@@ -182,13 +181,6 @@ class avtSDFFileFormat : public avtSTMDFileFormat
     sdf_block_t *GetArray(int, const char *);
     void OpenFile(int);
     void FillGhost(int domain, vtkDataSet *ds);
-
-    void *sdf_extension_handle;
-    sdf_extension_t *ext;
-    sdf_extension_t *sdf_extension_load(sdf_file_t *);
-    void sdf_extension_unload(void);
-  public:
-    static int extension_not_found;
 };
 
 
