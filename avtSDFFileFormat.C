@@ -551,14 +551,25 @@ avtSDFFileFormat::PopulateDatabaseMetaData(avtDatabaseMetaData *md)
             sdf_block_t *mesh = sdf_find_block_by_id(h, b->mesh_id);
             if (!mesh) continue;
 
+            // Find the first stitched path block
+            if (!b->variable_ids || !b->variable_ids[0]) continue;
+            sdf_block_t *var = sdf_find_block_by_id(h, b->variable_ids[0]);
+            if (!var) continue;
+            if (!var->variable_ids || !var->variable_ids[0]) continue;
+            var = sdf_find_block_by_id(h, var->variable_ids[0]);
+            if (!var) continue;
+
             avtScalarMetaData *smd = new avtScalarMetaData();
             smd->name = b->name;
             smd->meshName = mesh->name;
-            smd->centering = AVT_NODECENT;
+            if (var->stagger == SDF_STAGGER_CELL_CENTRE)
+                smd->centering = AVT_ZONECENT;
+            else
+                smd->centering = AVT_NODECENT;
             smd->hasDataExtents = false;
             smd->treatAsASCII = false;
-            //smd->hasUnits = true;
-            //smd->units = b->units;
+            smd->hasUnits = true;
+            smd->units = var->units;
             md->Add(smd);
         }
     }
