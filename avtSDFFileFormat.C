@@ -328,6 +328,9 @@ avtSDFFileFormat::PopulateDatabaseMetaData(avtDatabaseMetaData *md)
                 b->blocktype == SDF_BLOCKTYPE_PLAIN_DERIVED ||
                 b->blocktype == SDF_BLOCKTYPE_POINT_DERIVED) {
 
+            debug1 << "avtSDFFileFormat:: Plain variable: id:" << b->id
+                   << ", name:" << b->name << endl;
+
             if (use_allboundary == 0 && b->mesh_id &&
                 memcmp(b->mesh_id, "boundary", 8) == 0) {
                 if (use_boundary == 0)
@@ -347,6 +350,10 @@ avtSDFFileFormat::PopulateDatabaseMetaData(avtDatabaseMetaData *md)
             if (mesh->ndims == 1 &&
                     (b->blocktype == SDF_BLOCKTYPE_PLAIN_VARIABLE ||
                     b->blocktype == SDF_BLOCKTYPE_PLAIN_DERIVED)) {
+
+                debug1 << "avtSDFFileFormat:: Adding as curve: id:" << b->id
+                       << endl;
+
                 avtCurveMetaData *cmd = new avtCurveMetaData(b->name);
                 cmd->originalName = b->name;
                 cmd->validVariable = true;
@@ -359,6 +366,9 @@ avtSDFFileFormat::PopulateDatabaseMetaData(avtDatabaseMetaData *md)
                 md->Add(cmd);
                 //continue;
             } else {
+                debug1 << "avtSDFFileFormat:: Adding as scalar: id:" << b->id
+                       << endl;
+
                 avtScalarMetaData *smd = new avtScalarMetaData();
                 avtCentering cent;
                 // For the time being, most data is plotted as zon-centred
@@ -378,6 +388,10 @@ avtSDFFileFormat::PopulateDatabaseMetaData(avtDatabaseMetaData *md)
             }
         } else if (b->blocktype == SDF_BLOCKTYPE_STITCHED_TENSOR
                 || b->blocktype == SDF_BLOCKTYPE_CONTIGUOUS_TENSOR) {
+
+            debug1 << "avtSDFFileFormat:: Stitched variable: id:" << b->id
+                   << ", name:" << b->name << endl;
+
             std::string definition;
             definition.append("{");
             sdf_block_t *matvar;
@@ -400,6 +414,10 @@ avtSDFFileFormat::PopulateDatabaseMetaData(avtDatabaseMetaData *md)
             md->AddExpression(&expr);
         } else if (b->blocktype == SDF_BLOCKTYPE_STITCHED_MATERIAL
                 || b->blocktype == SDF_BLOCKTYPE_CONTIGUOUS_MATERIAL) {
+
+            debug1 << "avtSDFFileFormat:: Stitched material: id:" << b->id
+                   << ", name:" << b->name << endl;
+
             sdf_block_t *mesh = sdf_find_block_by_id(h, b->mesh_id);
             if (!mesh) continue;
 
@@ -432,6 +450,10 @@ avtSDFFileFormat::PopulateDatabaseMetaData(avtDatabaseMetaData *md)
                 mnames);
         } else if (b->blocktype == SDF_BLOCKTYPE_STITCHED_SPECIES
                 || b->blocktype == SDF_BLOCKTYPE_CONTIGUOUS_SPECIES) {
+
+            debug1 << "avtSDFFileFormat:: Stitched species: id:" << b->id
+                   << ", name:" << b->name << endl;
+
             sdf_block_t *mesh = sdf_find_block_by_id(h, b->mesh_id);
             if (!mesh) continue;
             sdf_block_t *mat = sdf_find_block_by_id(h, b->material_id);
@@ -481,6 +503,10 @@ avtSDFFileFormat::PopulateDatabaseMetaData(avtDatabaseMetaData *md)
             AddSpeciesToMetaData(md, b->name, mesh->name, mat->name,
                 matdims, nspec, specnames);
         } else if (b->blocktype == SDF_BLOCKTYPE_STITCHED && b->stagger == 11) {
+
+            debug1 << "avtSDFFileFormat:: Stitched beam group: id:" << b->id
+                   << ", name:" << b->name << endl;
+
             avtMeshMetaData *mmd = new avtMeshMetaData(b->name, 1, 0, 0, 0,
                 2, 2, AVT_AMR_MESH);
 
@@ -518,6 +544,10 @@ avtSDFFileFormat::PopulateDatabaseMetaData(avtDatabaseMetaData *md)
             mmd->blockNames = blockNames;
             md->Add(mmd);
         } else if (b->blocktype == SDF_BLOCKTYPE_STITCHED && b->stagger == 12) {
+
+            debug1 << "avtSDFFileFormat:: Stitched beam: id:" << b->id
+                   << ", name:" << b->name << endl;
+
             sdf_block_t *mesh = sdf_find_block_by_id(h, b->mesh_id);
             if (!mesh) continue;
 
