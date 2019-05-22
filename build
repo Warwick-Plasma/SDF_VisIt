@@ -4,6 +4,7 @@ fmt="SDF"
 
 fullversion=`visit -version 2>&1 | sed 's,.* \([0-9\.]*\),\1,'`
 version=${fullversion%%\.*}
+[ "$version" -gt 2 ] && version=2
 tmpdir=.builddir
 
 clean=0
