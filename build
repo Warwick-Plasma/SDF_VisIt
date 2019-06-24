@@ -201,6 +201,7 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)' CMakeLists.txt > $tmpdir/tmp
       inc=$(dirname $setup)
       ln -s $inc .
       ln -s $(dirname $inc)/lib .
+      ln -s $(dirname $inc)/archives .
       if [ ! -f $setup ]; then
         copy_cmake_files
       fi
