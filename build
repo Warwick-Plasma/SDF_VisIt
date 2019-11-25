@@ -318,7 +318,7 @@ endif()/' $setup > $tmpdir/tmp
     echo "VisIt ${fmt} reader successfully built.${srl}"
   fi
 
-  if [ $stop -ne 0 ] ; then exit ; fi
+  if [ $stop -ne 0 ] ; then exit $err; fi
   return $err
 }
 
