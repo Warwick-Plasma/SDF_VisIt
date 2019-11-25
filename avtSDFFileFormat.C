@@ -29,6 +29,7 @@
 #include <vtkUnstructuredGrid.h>
 #include <vtkCellArray.h>
 #include <vtkPolyData.h>
+#include <vtkInformation.h>
 
 #include <avtGhostData.h>
 #include <vtkUnsignedCharArray.h>
@@ -963,8 +964,8 @@ avtSDFFileFormat::FillGhost(int domain, vtkDataSet *ds)
     }
 
     ds->GetCellData()->AddArray(ghostCells);
-    vtkStreamingDemandDrivenPipeline::SetUpdateGhostLevel(
-        ds->GetInformation(), 0);
+    ds->GetInformation()->Set(
+        vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS(), 0);
     ghostCells->Delete();
 
     delete [] blanks;
