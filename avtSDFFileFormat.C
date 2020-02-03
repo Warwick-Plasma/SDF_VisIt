@@ -508,27 +508,29 @@ avtSDFFileFormat::PopulateDatabaseMetaData(avtDatabaseMetaData *md)
             debug1 << "avtSDFFileFormat:: Stitched beam group: id:" << b->id
                    << ", name:" << b->name << endl;
 
-            avtMeshMetaData *mmd = new avtMeshMetaData(b->name, 1, 0, 0, 0,
-                2, 2, AVT_AMR_MESH);
-
-            md->SetFormatCanDoDomainDecomposition(false);
-
-            mmd->groupTitle = b->id;
-            mmd->hasSpatialExtents = false;
-
             sdf_block_t *gb, *sb;
             vector<string> blockNames, groupNames;
             vector<int> groupIds;
+            int ndims = 0;
 
             for (unsigned int ng = 0 ; ng < b->ndims ; ng++) {
                 gb = sdf_find_block_by_id(h, b->variable_ids[ng]);
                 groupNames.push_back(gb->name);
                 for (unsigned int n = 0 ; n < gb->ndims ; n++) {
                     sb = sdf_find_block_by_id(h, gb->variable_ids[n]);
+                    ndims = sb->ndims;
                     blockNames.push_back(sb->id);
                     groupIds.push_back(ng);
                 }
             }
+
+            avtMeshMetaData *mmd = new avtMeshMetaData(b->name, 1, 0, 0, 0,
+                ndims, ndims, AVT_AMR_MESH);
+
+            md->SetFormatCanDoDomainDecomposition(false);
+
+            mmd->groupTitle = b->id;
+            mmd->hasSpatialExtents = false;
 
             mmd->blockTitle = strndup(sb->name, h->string_length);
             for (int i = 0 ; i < mmd->blockTitle.length() ; i++) {
