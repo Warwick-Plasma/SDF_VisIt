@@ -79,7 +79,18 @@ avtSDFFileFormat::OpenFile(int open_only)
     h->stack_handle = stack_handle;
     step = h->step;
     time = h->time;
-    debug1 << "avtSDFFileFormat::OpenFile h:" << h << endl;
+    char const *prefix = "avtSDFFileFormat::OpenFile ";
+
+    debug1 << prefix << "h:" << h << endl;
+
+    static int printed = 0;
+    if (printed == 0) {
+        char *info = sdf_extension_get_info_string(h, prefix);
+        printed = 1;
+
+        debug1 << info << endl;
+        free(info);
+    }
 
     if (open_only) {
         sdf_close(h);
@@ -132,8 +143,29 @@ avtSDFFileFormat::avtSDFFileFormat(const char *filename,
     rank = PAR_Rank();
     ncpus = PAR_Size();
     ndomains = ncpus;
-    debug1 << "avtSDFFileFormat:: rank:" << rank << ", ncpus:" << ncpus
-           << ", comm:" << comm << ", filename:" << filename << endl;
+
+    static int printed = 0;
+    if (printed == 0) {
+        char *s;
+        debug1 << "avtSDFFileFormat:: rank:" << rank << ", ncpus:" << ncpus
+               << ", comm:" << comm << ", filename:" << filename << endl;
+        debug1 << "avtSDFFileFormat:: commit ID: "
+               << SDF_COMMIT_ID << endl;
+        debug1 << "avtSDFFileFormat:: commit date: "
+               << SDF_COMMIT_DATE << endl;
+        debug1 << "avtSDFFileFormat:: build date: "
+               << SDF_READER_BUILD_DATE << endl;
+        s = sdf_get_library_commit_id();
+        debug1 << "avtSDFFileFormat:: SDF library commit ID: "
+               << s << endl;
+        free(s);
+        s = sdf_get_library_commit_date();
+        debug1 << "avtSDFFileFormat:: SDF library commit date: "
+               << s << endl;
+        free(s);
+        printed = 1;
+    }
+
     this->filename = new char[strlen(filename)+1];
     memcpy(this->filename, filename, strlen(filename)+1);
     gotMetadata = false;
@@ -235,15 +267,23 @@ avtSDFFileFormat::PopulateDatabaseMetaData(avtDatabaseMetaData *md)
 
     gotMetadata = true;
 
-    char buf[1024];
-    snprintf(buf, 1024, "\n SDF reader commit ID: %s\n "
+    char *id, *date, *info = sdf_extension_get_info_string(h, NULL);
+
+    char buf[2048];
+    snprintf(buf, 2048, "\n SDF reader commit ID: %s\n "
         "SDF reader commit date: %s\n SDF reader build date: %s\n "
-        "Job ID: %d.%d\n Code name: %s\n Code I/O version: %d\n "
+        "SDF library commit ID: %s\n SDF library commit date: %s\n "
+        "%s\n Job ID: %d.%d\n Code name: %s\n Code I/O version: %d\n "
         "File revision: %d\n Restart flag: %d\n Other domains: %d\n "
         "Station file: %d",
         SDF_COMMIT_ID, SDF_COMMIT_DATE, SDF_READER_BUILD_DATE,
+        id = sdf_get_library_commit_id(),
+        date = sdf_get_library_commit_date(), info,
         h->jobid1, h->jobid2, h->code_name, h->code_io_version,
         h->file_revision, h->restart_flag, h->other_domains, h->station_file);
+    free(id);
+    free(date);
+    free(info);
 
     md->SetDatabaseComment(buf);
 
