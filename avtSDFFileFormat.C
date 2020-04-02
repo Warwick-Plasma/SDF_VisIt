@@ -89,7 +89,6 @@ avtSDFFileFormat::OpenFile(int open_only)
         printed = 1;
 
         debug1 << info << endl;
-        free(info);
     }
 
     if (open_only) {
@@ -158,11 +157,9 @@ avtSDFFileFormat::avtSDFFileFormat(const char *filename,
         s = sdf_get_library_commit_id();
         debug1 << "avtSDFFileFormat:: SDF library commit ID: "
                << s << endl;
-        free(s);
         s = sdf_get_library_commit_date();
         debug1 << "avtSDFFileFormat:: SDF library commit date: "
                << s << endl;
-        free(s);
         printed = 1;
     }
 
@@ -281,9 +278,6 @@ avtSDFFileFormat::PopulateDatabaseMetaData(avtDatabaseMetaData *md)
         date = sdf_get_library_commit_date(), info,
         h->jobid1, h->jobid2, h->code_name, h->code_io_version,
         h->file_revision, h->restart_flag, h->other_domains, h->station_file);
-    free(id);
-    free(date);
-    free(info);
 
     md->SetDatabaseComment(buf);
 
