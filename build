@@ -155,6 +155,9 @@ buildit () {
     exit 1
   fi
 
+  (cd ../C/src
+   sh gen_commit_string.sh .)
+
   if [ $purge -ne 0 ]; then
     xml2info -clobber $PRIVATE ${fmt}${version}.xml
 
@@ -360,7 +363,7 @@ if [ $clean -ge 1 ]; then
   fi
 fi
 if [ $build_visit_reader -eq 1 ]; then
-  sh gen_commit_string.sh
+  sh gen_commit_string.sh .
   echo "#define SDF_READER_BUILD_DATE \"`date`\"" > build_date.h
 
   if [ $build_type -eq 1 ]; then

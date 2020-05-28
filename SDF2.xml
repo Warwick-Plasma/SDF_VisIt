@@ -24,6 +24,7 @@
       ../C/src/sdf_output.c
       ../C/src/sdf_util.c
       ../C/src/stack_allocator.c
+      ../C/src/commit_info.h
     </Files>
     <CXXFLAGS>
       -I../C/include
