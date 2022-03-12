@@ -566,7 +566,7 @@ avtSDFFileFormat::PopulateDatabaseMetaData(avtDatabaseMetaData *md)
             mmd->groupTitle = b->id;
             mmd->hasSpatialExtents = false;
 
-            mmd->blockTitle = strndup(sb->name, h->string_length);
+            mmd->blockTitle = strdup(sb->name);
             for (int i = 0 ; i < mmd->blockTitle.length() ; i++) {
                 if (mmd->blockTitle[i] == '/') {
                     mmd->blockTitle.resize(i);
