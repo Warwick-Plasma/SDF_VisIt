@@ -1,3 +1,6 @@
+cmake -DOUTDIR=. -P CommitInfo.cmake
+cmake -P BuildDate.cmake
+
 xml2info.exe  -clobber SDF2.xml
 xml2cmake.exe -clobber SDF2.xml
 
